@@ -1,0 +1,12 @@
+__pycache__/
+*.pyc
+*.pyo
+.env
+.app_config.json
+.DS_Store
+*.log
+venv/
+.venv/
+data/notes.json
+static/data/historical/*.csv
+static/docs/*.pdf
