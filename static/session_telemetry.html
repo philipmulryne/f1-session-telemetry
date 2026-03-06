@@ -97,9 +97,19 @@ canvas{display:block;width:100%}
 .telem-slot{display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:var(--radius);border:2px solid var(--border);background:var(--surface);font-size:12px;min-width:180px}
 .telem-slot.slot1{border-color:var(--blue)}
 .telem-slot.slot2{border-color:var(--accent)}
+.telem-slot.slot3{border-color:var(--green)}
 .telem-slot .slot-label{font-weight:800;font-size:10px;text-transform:uppercase}
 .telem-slot .slot-info{color:var(--text);font-weight:600}
 .telem-slot .slot-empty{color:var(--text2);font-style:italic}
+
+/* Inline telem lap pickers */
+.telem-picker-row{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.telem-picker{display:flex;align-items:center;gap:5px;flex:1;min-width:260px}
+.telem-picker .picker-label{font-weight:800;font-size:10px;text-transform:uppercase;white-space:nowrap}
+.telem-picker select{background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:var(--radius);padding:4px 8px;font-size:11px;cursor:pointer;font-family:inherit;max-width:180px}
+.telem-picker select:focus{border-color:var(--blue);outline:none}
+.telem-picker .picker-best{font-size:10px;padding:3px 8px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;white-space:nowrap;transition:all .15s}
+.telem-picker .picker-best:hover{background:var(--green);color:#000;border-color:var(--green)}
 
 /* Loading / empty */
 .loading{text-align:center;padding:60px 20px;color:var(--text2)}
@@ -532,7 +542,7 @@ let STATE={
   driverFilter:new Set(), // empty=all, or Set of driver_numbers
   compoundFilter:null, // null=all, or compound string
   activeMeeting:null,  // meeting object (has circuit_short_name)
-  telemSlots:[null,null], // [{dn,lapNum,lapTime,data:{car,loc}}, ...]
+  telemSlots:[null,null,null], // [{dn,lapNum,lapTime,data:{car,loc}}, ...] up to 3
   lapScatterCanvas:null,
   // Qualifying phase filter
   qualiPhase:null,     // null=all, "Q1","Q2","Q3"
@@ -682,6 +692,7 @@ async function doLiveRefresh(){
     renderDriverFilters();
     renderScatterDriverChips();
     renderLapsTable();
+    populateTelemDriverSelects();
     drawLapScatter();
     renderSpeedRankings();
     drawTopVsMean();
@@ -1266,23 +1277,46 @@ function renderSessionView(){
       </div>
       <div class="panel-body" style="padding:12px 14px">
         <div class="telem-desc">
-          <strong>How it works:</strong> Select two laps from the Lap Data table below to overlay their full telemetry.
-          This compares <strong style="color:var(--blue)">Driver 1</strong> vs <strong style="color:var(--accent)">Driver 2</strong> traces —
-          speed, throttle, brake, and gear through every corner — plus a <strong>delta graph</strong> showing who gains/loses time where.
+          Pick two laps using the dropdowns below, or click rows in the Lap Data table.
+          Compares <strong style="color:var(--blue)">D1</strong> vs <strong style="color:var(--accent)">D2</strong> — speed, throttle, brake, gear &amp; delta.
           ${isQuali
             ?"<br>&#9889; <em>Qualifying tip: compare best laps of top drivers to see where pace is gained.</em>"
             :isPractice
             ?"<br>&#9881; <em>Practice tip: compare same driver across stints to evaluate setup changes, or rivals on the same compound.</em>"
             :"<br>&#127937; <em>Race tip: compare laps at similar fuel loads to evaluate true race pace differences.</em>"}
         </div>
+        <div class="telem-picker-row" id="telem-picker-row">
+          <div class="telem-picker">
+            <span class="picker-label" style="color:var(--blue)">D1</span>
+            <select id="telem-drv-0" onchange="onTelemDriverChange(0)"><option value="">Driver…</option></select>
+            <select id="telem-lap-0" onchange="onTelemLapChange(0)"><option value="">Lap…</option></select>
+            <button class="picker-best" onclick="selectBestLap(0)" title="Select fastest lap for this driver">&#9733; Best</button>
+          </div>
+          <div class="telem-picker">
+            <span class="picker-label" style="color:var(--accent)">D2</span>
+            <select id="telem-drv-1" onchange="onTelemDriverChange(1)"><option value="">Driver…</option></select>
+            <select id="telem-lap-1" onchange="onTelemLapChange(1)"><option value="">Lap…</option></select>
+            <button class="picker-best" onclick="selectBestLap(1)" title="Select fastest lap for this driver">&#9733; Best</button>
+          </div>
+          <div class="telem-picker">
+            <span class="picker-label" style="color:var(--green)">D3</span>
+            <select id="telem-drv-2" onchange="onTelemDriverChange(2)"><option value="">Driver…</option></select>
+            <select id="telem-lap-2" onchange="onTelemLapChange(2)"><option value="">Lap…</option></select>
+            <button class="picker-best" onclick="selectBestLap(2)" title="Select fastest lap for this driver">&#9733; Best</button>
+          </div>
+        </div>
         <div class="telem-slots" id="telem-slots">
           <div class="telem-slot slot1" id="telem-slot-0">
             <span class="slot-label" style="color:var(--blue)">D1</span>
-            <span class="slot-empty">Click a lap row below</span>
+            <span class="slot-empty">Select a lap</span>
           </div>
           <div class="telem-slot slot2" id="telem-slot-1">
             <span class="slot-label" style="color:var(--accent)">D2</span>
-            <span class="slot-empty">Click another lap row</span>
+            <span class="slot-empty">Optional</span>
+          </div>
+          <div class="telem-slot slot3" id="telem-slot-2">
+            <span class="slot-label" style="color:var(--green)">D3</span>
+            <span class="slot-empty">Optional</span>
           </div>
           <button class="ctrl-btn" onclick="clearTelemSlots()">Clear</button>
           <button class="ctrl-btn" onclick="openCrossSessionPicker()" title="Compare against a lap from another session or year" style="font-size:10px">&#128260; Cross-Session</button>
@@ -1479,6 +1513,7 @@ function renderSessionView(){
   renderDriverFilters();
   renderScatterDriverChips();
   renderLapsTable();
+  populateTelemDriverSelects();
   renderStintsTable();
   drawLapScatter();
   renderSpeedRankings();
@@ -3582,22 +3617,116 @@ function removeScatterAnno(i){STATE.scatterAnnotations.splice(i,1);renderScatter
    TELEMETRY COMPARISON
    ══════════════════════════════════════════════════════════════════════════════ */
 function selectLapForTelem(dn,lapNum,lapTime){
-  const slot0=STATE.telemSlots[0];
-  const slot1=STATE.telemSlots[1];
   // If clicking already-selected lap, deselect it
-  if(slot0&&slot0.dn===dn&&slot0.lapNum===lapNum){STATE.telemSlots[0]=null;updateTelemSlotUI();renderLapsTable();return;}
-  if(slot1&&slot1.dn===dn&&slot1.lapNum===lapNum){STATE.telemSlots[1]=null;updateTelemSlotUI();renderLapsTable();return;}
+  for(let i=0;i<3;i++){
+    const s=STATE.telemSlots[i];
+    if(s&&s.dn===dn&&s.lapNum===lapNum){STATE.telemSlots[i]=null;updateTelemSlotUI();renderLapsTable();return;}
+  }
   // Fill first empty slot
   const info={dn,lapNum,lapTime,data:null};
-  if(!slot0){STATE.telemSlots[0]=info;}
-  else if(!slot1){STATE.telemSlots[1]=info;}
-  else{STATE.telemSlots[0]=STATE.telemSlots[1];STATE.telemSlots[1]=info;}
+  const empty=STATE.telemSlots.indexOf(null);
+  if(empty!==-1){STATE.telemSlots[empty]=info;}
+  else{STATE.telemSlots[0]=STATE.telemSlots[1];STATE.telemSlots[1]=STATE.telemSlots[2];STATE.telemSlots[2]=info;}
+  updateTelemSlotUI();
+  renderLapsTable();
+}
+
+/* ── Inline telem lap pickers ── */
+function populateTelemDriverSelects(){
+  const d=STATE.sessionData;
+  if(!d)return;
+  const drivers=d.drivers||{};
+  const laps=(d.laps||[]).filter(l=>l.lap_duration&&l.lap_duration>0);
+  // Collect driver numbers that actually have laps
+  const dnsWithLaps=new Set(laps.map(l=>l.driver_number));
+  // Sort drivers alphabetically by acronym
+  const sorted=Object.entries(drivers)
+    .filter(([dn])=>dnsWithLaps.has(Number(dn)))
+    .sort((a,b)=>(a[1].acronym||"").localeCompare(b[1].acronym||""));
+  for(let i=0;i<3;i++){
+    const sel=document.getElementById("telem-drv-"+i);
+    if(!sel)continue;
+    const prev=sel.value;
+    sel.innerHTML='<option value="">Driver\u2026</option>';
+    sorted.forEach(([dn,drv])=>{
+      sel.innerHTML+=`<option value="${dn}" style="color:${teamColor(drv.team)||'var(--text)'}">${esc(drv.acronym||"#"+dn)}</option>`;
+    });
+    if(prev)sel.value=prev;
+  }
+}
+
+function onTelemDriverChange(slotIdx){
+  const sel=document.getElementById("telem-drv-"+slotIdx);
+  const dn=sel?Number(sel.value):0;
+  populateTelemLapSelect(slotIdx,dn);
+  // Clear the lap select — user must pick a lap
+  const lapSel=document.getElementById("telem-lap-"+slotIdx);
+  if(lapSel)lapSel.value="";
+}
+
+function populateTelemLapSelect(slotIdx,dn){
+  const lapSel=document.getElementById("telem-lap-"+slotIdx);
+  if(!lapSel)return;
+  if(!dn){lapSel.innerHTML='<option value="">Lap\u2026</option>';return;}
+  const d=STATE.sessionData;
+  if(!d)return;
+  const laps=(d.laps||[]).filter(l=>l.driver_number===dn&&l.lap_duration&&l.lap_duration>0);
+  if(laps.length===0){lapSel.innerHTML='<option value="">No laps</option>';return;}
+
+  // Enrich with compound info
+  const stints=d.stints||[];
+  const dStints=stints.filter(s=>s.driver_number===dn);
+  const enriched=laps.map(l=>{
+    let compound="";
+    for(const st of dStints){
+      if(l.lap_number>=st.lap_start&&l.lap_number<=st.lap_end){compound=(st.compound||"").toUpperCase();break;}
+    }
+    return{...l,compound};
+  });
+
+  const fastest=Math.min(...enriched.map(l=>l.lap_duration));
+  // Sort by lap number ascending
+  enriched.sort((a,b)=>a.lap_number-b.lap_number);
+
+  lapSel.innerHTML='<option value="">Lap\u2026</option>';
+  enriched.forEach(l=>{
+    const isBest=Math.abs(l.lap_duration-fastest)<0.001;
+    const tag=l.compound?` [${l.compound}]`:"";
+    const star=isBest?"\u2605 ":"";
+    lapSel.innerHTML+=`<option value="${l.lap_number}" data-time="${l.lap_duration}">${star}L${l.lap_number} \u2014 ${fmtTime(l.lap_duration)}${tag}</option>`;
+  });
+}
+
+function onTelemLapChange(slotIdx){
+  const drvSel=document.getElementById("telem-drv-"+slotIdx);
+  const lapSel=document.getElementById("telem-lap-"+slotIdx);
+  if(!drvSel||!lapSel)return;
+  const dn=Number(drvSel.value);
+  const lapNum=Number(lapSel.value);
+  if(!dn||!lapNum)return;
+  const lapTime=Number(lapSel.selectedOptions[0]?.dataset.time||0);
+  // Set the slot directly
+  STATE.telemSlots[slotIdx]={dn,lapNum,lapTime,data:null};
+  updateTelemSlotUI();
+  renderLapsTable();
+}
+
+function selectBestLap(slotIdx){
+  const drvSel=document.getElementById("telem-drv-"+slotIdx);
+  if(!drvSel||!drvSel.value)return;
+  const dn=Number(drvSel.value);
+  const d=STATE.sessionData;
+  if(!d)return;
+  const laps=(d.laps||[]).filter(l=>l.driver_number===dn&&l.lap_duration&&l.lap_duration>0);
+  if(laps.length===0)return;
+  const best=laps.reduce((a,b)=>a.lap_duration<b.lap_duration?a:b);
+  STATE.telemSlots[slotIdx]={dn,lapNum:best.lap_number,lapTime:best.lap_duration,data:null};
   updateTelemSlotUI();
   renderLapsTable();
 }
 
 function clearTelemSlots(){
-  STATE.telemSlots=[null,null];
+  STATE.telemSlots=[null,null,null];
   updateTelemSlotUI();
   renderLapsTable();
   document.getElementById("telem-charts").style.display="none";
@@ -3605,33 +3734,48 @@ function clearTelemSlots(){
 
 function updateTelemSlotUI(){
   const drivers=STATE.sessionData?STATE.sessionData.drivers||{}:{};
-  for(let i=0;i<2;i++){
+  const slotColors=["var(--blue)","var(--accent)","var(--green)"];
+  const emptyLabels=["Select a lap","Optional","Optional"];
+  for(let i=0;i<3;i++){
     const el=document.getElementById("telem-slot-"+i);
     if(!el)continue;
     const s=STATE.telemSlots[i];
     if(s){
       if(s.crossSession){
-        // Cross-session slot — use stored acronym/team
         const col=teamColor(s.team)||"#888";
-        el.innerHTML=`<span class="slot-label" style="color:var(--accent)">D2</span>
+        el.innerHTML=`<span class="slot-label" style="color:${slotColors[i]}">D${i+1}</span>
           <span class="slot-info" style="color:${col}">${esc(s.acronym||"#"+s.dn)}</span>
           <span style="font-size:11px;color:var(--text2)">L${s.lapNum} — ${fmtTime(s.lapTime)}</span>
           <span style="font-size:9px;color:var(--yellow);margin-left:4px" title="From another session">&#128260; cross</span>`;
       }else{
         const drv=drivers[s.dn]||{};
-        el.innerHTML=`<span class="slot-label" style="color:${i===0?"var(--blue)":"var(--accent)"}">D${i+1}</span>
+        el.innerHTML=`<span class="slot-label" style="color:${slotColors[i]}">D${i+1}</span>
           <span class="slot-info" style="color:${teamColor(drv.team)}">${esc(drv.acronym||"#"+s.dn)}</span>
           <span style="font-size:11px;color:var(--text2)">L${s.lapNum} — ${fmtTime(s.lapTime)}</span>`;
       }
     }else{
-      el.innerHTML=`<span class="slot-label" style="color:${i===0?"var(--blue)":"var(--accent)"}">D${i+1}</span><span class="slot-empty">Click a lap row</span>`;
+      el.innerHTML=`<span class="slot-label" style="color:${slotColors[i]}">D${i+1}</span><span class="slot-empty">${emptyLabels[i]}</span>`;
     }
   }
-  const both=STATE.telemSlots[0]&&STATE.telemSlots[1];
+  // Sync inline picker dropdowns
+  for(let i=0;i<3;i++){
+    const s=STATE.telemSlots[i];
+    const drvSel=document.getElementById("telem-drv-"+i);
+    const lapSel=document.getElementById("telem-lap-"+i);
+    if(drvSel&&lapSel){
+      if(s&&!s.crossSession){
+        if(drvSel.value!=String(s.dn)){drvSel.value=String(s.dn);populateTelemLapSelect(i,s.dn);}
+        lapSel.value=String(s.lapNum);
+      }else if(!s){
+        drvSel.value="";lapSel.innerHTML='<option value="">Lap\u2026</option>';
+      }
+    }
+  }
+  const filled=STATE.telemSlots.filter(s=>s!==null).length;
   const btn=document.getElementById("btn-compare");
-  if(btn)btn.style.display=both?"inline-block":"none";
-  // Auto-compare when both slots filled
-  if(both)loadAndDrawTelem();
+  if(btn)btn.style.display=filled>=1?"inline-block":"none";
+  // Auto-load when at least one slot filled
+  if(filled>=1)loadAndDrawTelem();
 }
 
 async function fetchCarData(sk,dn,lapStart,lapEnd){
@@ -3662,8 +3806,8 @@ function findLapTimestamps(dn,lapNum){
 }
 
 async function loadAndDrawTelem(){
-  const s0=STATE.telemSlots[0],s1=STATE.telemSlots[1];
-  if(!s0||!s1)return;
+  const filled=STATE.telemSlots.filter(s=>s!==null);
+  if(filled.length===0)return;
   const sk=STATE.activeSession.session_key;
   const chartsEl=document.getElementById("telem-charts");
   chartsEl.style.display="block";
@@ -3676,11 +3820,10 @@ async function loadAndDrawTelem(){
   });
 
   try{
-    for(let i=0;i<2;i++){
+    for(let i=0;i<3;i++){
       const slot=STATE.telemSlots[i];
-      if(slot.data)continue;
+      if(!slot||slot.data)continue;
       if(slot.crossSession){
-        // Cross-session slot: use stored sessionKey and timestamps
         slot.data=await fetchCarData(slot.sessionKey,slot.dn,slot.lapStart,slot.lapEnd);
       }else{
         const ts=findLapTimestamps(slot.dn,slot.lapNum);
@@ -6201,49 +6344,62 @@ function detectTurns(carData, locData){
 }
 
 function drawTelemCharts(){
-  const s0=STATE.telemSlots[0],s1=STATE.telemSlots[1];
-  if(!s0||!s1||!s0.data||!s1.data)return;
-  const d1=s0.data.car,d2=s1.data.car;
-  if(!d1.length||!d2.length)return;
+  // Collect filled slots with data
+  const slots=STATE.telemSlots.filter(s=>s&&s.data&&s.data.car&&s.data.car.length);
+  if(slots.length===0)return;
   const drivers=STATE.sessionData.drivers||{};
-  const drv1=drivers[s0.dn]||{};
-  // For cross-session slots, driver may not be in current session's drivers
-  const drv2=s1.crossSession?{acronym:s1.acronym||"D2",team:s1.team||""}:(drivers[s1.dn]||{});
-  const c1=teamColor(drv1.team);
-  let c2=teamColor(drv2.team);
-  const sameColor=(c1===c2);
-  if(sameColor||!c2){
-    const cs=getComputedStyle(document.documentElement);
-    c2=cs.getPropertyValue("--accent").trim();
+  const cs=getComputedStyle(document.documentElement);
+  const slotColorVars=["--blue","--accent","--green"];
+  const dashStyles=[[],[6,3],[3,3]]; // solid, dashed, dotted
+
+  // Determine if all same driver (show lap numbers in labels)
+  const allSameDrv=slots.length>1&&slots.every(s=>s.dn===slots[0].dn&&!s.crossSession);
+
+  // Build traces array
+  const traces=slots.map((s,idx)=>{
+    const si=STATE.telemSlots.indexOf(s); // original slot index (0,1,2)
+    const drv=s.crossSession?{acronym:s.acronym||"D"+(si+1),team:s.team||""}:(drivers[s.dn]||{});
+    let color=teamColor(drv.team);
+    // Avoid duplicate colors: if same as a previous trace, use slot CSS variable
+    const prevColors=slots.slice(0,idx).map((_,pi)=>{
+      const pd=slots[pi].crossSession?{team:slots[pi].team||""}:(drivers[slots[pi].dn]||{});
+      return teamColor(pd.team);
+    });
+    if(!color||prevColors.includes(color)){color=cs.getPropertyValue(slotColorVars[si]).trim();}
+    const name=drv.acronym||"D"+(si+1);
+    const label=allSameDrv?`${name} L${s.lapNum}`:(s.crossSession?`${name} L${s.lapNum} \u2194`:name);
+    return{slot:s,data:s.data.car,color,label,dash:dashStyles[idx]||[]};
+  });
+  const meta={traces};
+
+  // Turn detection from longest data
+  const bestSlot=slots.reduce((a,b)=>a.data.car.length>=b.data.car.length?a:b);
+  let turns=getReferenceTurns(bestSlot.data.car,bestSlot.data.loc);
+  if(!turns) turns=detectTurns(bestSlot.data.car,bestSlot.data.loc);
+
+  drawTrace("cv-speed",meta,"speed",0,370,turns);
+  drawTrace("cv-throttle",meta,"throttle",0,100,turns);
+  drawTrace("cv-brake",meta,"brake",0,100,turns);
+  drawTrace("cv-gear",meta,"n_gear",0,8,turns);
+
+  // Delta chart: only for 2+ drivers, relative to D1
+  const deltaEl=document.getElementById("cv-delta")?.parentElement;
+  if(slots.length>=2&&deltaEl){
+    deltaEl.style.display="";
+    drawDelta("cv-delta",meta,slots,turns);
+  }else if(deltaEl){
+    deltaEl.style.display="none";
   }
-  const n1=drv1.acronym||"D1",n2=drv2.acronym||"D2";
-  const sameDrv=(s0.dn===s1.dn&&!s1.crossSession);
-  const isCross=!!s1.crossSession;
-  const label1=sameDrv?`${n1} L${s0.lapNum}`:n1;
-  const label2=isCross?`${n2} L${s1.lapNum} ↔`:(sameDrv?`${n2} L${s1.lapNum}`:n2);
-  const meta={c1,c2,label1,label2,sameColor,sameDrv};
-
-  // Use the best data source for turn detection:
-  // 1. Reference turns for known circuits (spatial X,Y matching)
-  // 2. Zone-based detection using location data curvature + heading + speed
-  // 3. Speed-only fallback
-  const bestSlot=d1.length>=d2.length?s0:s1;
-  const bestCar=bestSlot.data.car;
-  const bestLoc=bestSlot.data.loc;
-  let turns=getReferenceTurns(bestCar,bestLoc);
-  if(!turns) turns=detectTurns(bestCar,bestLoc);
-
-  drawTrace("cv-speed",d1,d2,meta,"speed",0,370,turns);
-  drawTrace("cv-throttle",d1,d2,meta,"throttle",0,100,turns);
-  drawTrace("cv-brake",d1,d2,meta,"brake",0,100,turns);
-  drawTrace("cv-gear",d1,d2,meta,"n_gear",0,8,turns);
-  drawDelta("cv-delta",d1,d2,meta,s0,s1,turns);
-  drawTrackDominance();
+  // Track dominance: only for exactly 2 slots (keep existing logic)
+  if(slots.length===2)drawTrackDominance();
+  else{const dc=document.getElementById("cv-dominance");if(dc){const cx=dc.getContext("2d");cx.clearRect(0,0,dc.width,dc.height);}}
 }
 
-function drawTrace(canvasId,d1,d2,meta,field,yMin,yMax,turns){
+function drawTrace(canvasId,meta,field,yMin,yMax,turns){
   const canvas=document.getElementById(canvasId);
   if(!canvas)return;
+  const traces=meta.traces;
+  if(!traces||!traces.length)return;
   const ctx=canvas.getContext("2d");
   const dpr=window.devicePixelRatio||1;
   const rect=canvas.parentElement.getBoundingClientRect();
@@ -6280,45 +6436,38 @@ function drawTrace(canvasId,d1,d2,meta,field,yMin,yMax,turns){
     });
   }
 
-  // Draw traces — D1 solid, D2 dashed
-  function plotLine(data,color,dashed){
-    ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.globalAlpha=0.9;
-    if(dashed)ctx.setLineDash([6,3]);
+  // Draw all traces
+  traces.forEach(tr=>{
+    ctx.strokeStyle=tr.color;ctx.lineWidth=1.5;ctx.globalAlpha=0.9;
+    if(tr.dash&&tr.dash.length)ctx.setLineDash(tr.dash);
     ctx.beginPath();
-    const n=data.length;
+    const n=tr.data.length;
     for(let i=0;i<n;i++){
       const x=ml+pw*(i/(n-1||1));
-      const v=data[i][field]||0;
+      const v=tr.data[i][field]||0;
       const y=mt+ph*(1-Math.max(0,Math.min(1,(v-yMin)/range)));
       if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
     }
     ctx.stroke();ctx.globalAlpha=1;ctx.setLineDash([]);
-  }
-  plotLine(d1,meta.c1,false);
-  plotLine(d2,meta.c2,true);
+  });
 
-  // Key difference annotations at turn locations
-  if(turns&&turns.length&&(field==="speed"||field==="throttle"||field==="brake"||field==="n_gear")){
+  // Key difference annotations (only for exactly 2 traces)
+  if(traces.length===2&&turns&&turns.length&&(field==="speed"||field==="throttle"||field==="brake"||field==="n_gear")){
+    const d1=traces[0].data,d2=traces[1].data;
     const n1=d1.length,n2=d2.length;
-    // Compute smoothed difference around each turn
     const annotations=[];
-    const winFrac=0.03; // sample window around turn (3% of lap)
+    const winFrac=0.03;
     for(const t of turns){
       const i1=Math.round(t.frac*(n1-1)),i2=Math.round(t.frac*(n2-1));
-      // Sample a window around the turn
       const hw1=Math.max(3,Math.round(n1*winFrac)),hw2=Math.max(3,Math.round(n2*winFrac));
       let sum1=0,cnt1=0,sum2=0,cnt2=0;
       for(let j=Math.max(0,i1-hw1);j<=Math.min(n1-1,i1+hw1);j++){sum1+=(d1[j][field]||0);cnt1++;}
       for(let j=Math.max(0,i2-hw2);j<=Math.min(n2-1,i2+hw2);j++){sum2+=(d2[j][field]||0);cnt2++;}
       const avg1=sum1/(cnt1||1),avg2=sum2/(cnt2||1);
-      const diff=avg1-avg2; // positive = D1 higher value
-      // Threshold depends on field
+      const diff=avg1-avg2;
       const th=field==="speed"?5:field==="n_gear"?0.4:field==="brake"?8:5;
-      if(Math.abs(diff)>=th){
-        annotations.push({turn:t,diff,avg1,avg2});
-      }
+      if(Math.abs(diff)>=th) annotations.push({turn:t,diff,avg1,avg2});
     }
-    // Draw at most 4 annotations (most significant)
     annotations.sort((a,b)=>Math.abs(b.diff)-Math.abs(a.diff));
     const shown=annotations.slice(0,4);
     ctx.font="bold 7px sans-serif";
@@ -6327,44 +6476,37 @@ function drawTrace(canvasId,d1,d2,meta,field,yMin,yMax,turns){
       const midVal=(a.avg1+a.avg2)/2;
       const y=mt+ph*(1-Math.max(0,Math.min(1,(midVal-yMin)/range)));
       const d1Better=a.diff>0;
-      // For brake: higher brake = more braking = harder braking, context matters
-      const label=field==="speed"?`${d1Better?"\u25B2":"\u25BC"}${Math.abs(a.diff).toFixed(0)}`:
-                   field==="n_gear"?`${d1Better?"\u25B2":"\u25BC"}${Math.abs(a.diff).toFixed(1)}`:
-                   `${d1Better?"\u25B2":"\u25BC"}${Math.abs(a.diff).toFixed(0)}`;
-      const col=d1Better?meta.c1:meta.c2;
-      // Draw badge background
+      const label=field==="n_gear"?`${d1Better?"\u25B2":"\u25BC"}${Math.abs(a.diff).toFixed(1)}`:`${d1Better?"\u25B2":"\u25BC"}${Math.abs(a.diff).toFixed(0)}`;
+      const col=d1Better?traces[0].color:traces[1].color;
       const tw=ctx.measureText(label).width+6;
       const bx=x-tw/2,by=y-16;
-      ctx.globalAlpha=0.85;
-      ctx.fillStyle="rgba(0,0,0,0.7)";
+      ctx.globalAlpha=0.85;ctx.fillStyle="rgba(0,0,0,0.7)";
       const bh=13,br=3;
-      ctx.beginPath();
-      ctx.moveTo(bx+br,by);ctx.lineTo(bx+tw-br,by);ctx.arcTo(bx+tw,by,bx+tw,by+br,br);
+      ctx.beginPath();ctx.moveTo(bx+br,by);ctx.lineTo(bx+tw-br,by);ctx.arcTo(bx+tw,by,bx+tw,by+br,br);
       ctx.lineTo(bx+tw,by+bh-br);ctx.arcTo(bx+tw,by+bh,bx+tw-br,by+bh,br);
       ctx.lineTo(bx+br,by+bh);ctx.arcTo(bx,by+bh,bx,by+bh-br,br);
-      ctx.lineTo(bx,by+br);ctx.arcTo(bx,by,bx+br,by,br);ctx.closePath();
-      ctx.fill();
-      // Draw text
+      ctx.lineTo(bx,by+br);ctx.arcTo(bx,by,bx+br,by,br);ctx.closePath();ctx.fill();
       ctx.fillStyle=col;ctx.textAlign="center";ctx.textBaseline="middle";
-      ctx.fillText(label,x,by+6.5);
-      ctx.globalAlpha=1;
+      ctx.fillText(label,x,by+6.5);ctx.globalAlpha=1;
     });
   }
 
   // Inline legend (top-right)
-  const lx=ml+pw-4,ly=mt+12;
+  const lx=ml+pw-4;
   ctx.font="bold 9px sans-serif";ctx.textAlign="right";
-  // D1: solid line + name
-  ctx.strokeStyle=meta.c1;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(lx-60,ly-3);ctx.lineTo(lx-46,ly-3);ctx.stroke();
-  ctx.fillStyle=meta.c1;ctx.fillText(meta.label1,lx-62,ly);
-  // D2: dashed line + name
-  ctx.strokeStyle=meta.c2;ctx.lineWidth=2;ctx.setLineDash([4,2]);ctx.beginPath();ctx.moveTo(lx-60,ly+10);ctx.lineTo(lx-46,ly+10);ctx.stroke();ctx.setLineDash([]);
-  ctx.fillStyle=meta.c2;ctx.fillText(meta.label2,lx-62,ly+13);
+  traces.forEach((tr,idx)=>{
+    const ly=mt+12+idx*13;
+    ctx.strokeStyle=tr.color;ctx.lineWidth=2;
+    if(tr.dash&&tr.dash.length)ctx.setLineDash(tr.dash);
+    ctx.beginPath();ctx.moveTo(lx-60,ly-3);ctx.lineTo(lx-46,ly-3);ctx.stroke();ctx.setLineDash([]);
+    ctx.fillStyle=tr.color;ctx.fillText(tr.label,lx-62,ly);
+  });
 }
 
-function drawDelta(canvasId,d1,d2,meta,s0,s1,turns){
+function drawDelta(canvasId,meta,slots,turns){
   const canvas=document.getElementById(canvasId);
-  if(!canvas)return;
+  if(!canvas||slots.length<2)return;
+  const traces=meta.traces;
   const ctx=canvas.getContext("2d");
   const dpr=window.devicePixelRatio||1;
   const rect=canvas.parentElement.getBoundingClientRect();
@@ -6381,7 +6523,6 @@ function drawDelta(canvasId,d1,d2,meta,s0,s1,turns){
   const ml=44,mr=12,mt=6,mb=28;
   const pw=W-ml-mr,ph=H-mt-mb;
 
-  // Build elapsed time arrays
   function buildElapsed(car){
     const e=[0];
     for(let i=1;i<car.length;i++){
@@ -6394,22 +6535,35 @@ function drawDelta(canvasId,d1,d2,meta,s0,s1,turns){
     }
     return e;
   }
-  const e1=buildElapsed(d1),e2=buildElapsed(d2);
-  const scale1=s0.lapTime?(s0.lapTime/(e1[e1.length-1]||1)):1;
-  const scale2=s1.lapTime?(s1.lapTime/(e2[e2.length-1]||1)):1;
 
-  const nOut=Math.max(d1.length,d2.length);
-  const delta=[];
-  for(let i=0;i<nOut;i++){
-    const p=i/(nOut-1||1);
-    const fi1=p*(d1.length-1),lo1=Math.floor(fi1),hi1=Math.min(lo1+1,d1.length-1),fr1=fi1-lo1;
-    const t1=(e1[lo1]+(e1[hi1]-e1[lo1])*fr1)*scale1;
-    const fi2=p*(d2.length-1),lo2=Math.floor(fi2),hi2=Math.min(lo2+1,d2.length-1),fr2=fi2-lo2;
-    const t2=(e2[lo2]+(e2[hi2]-e2[lo2])*fr2)*scale2;
-    delta.push(t2-t1);
+  // Build delta arrays for each comparison driver vs D1
+  const ref=slots[0];
+  const refCar=ref.data.car;
+  const eRef=buildElapsed(refCar);
+  const scaleRef=ref.lapTime?(ref.lapTime/(eRef[eRef.length-1]||1)):1;
+
+  const deltaLines=[];
+  for(let si=1;si<slots.length;si++){
+    const cmp=slots[si];
+    const cmpCar=cmp.data.car;
+    const eCmp=buildElapsed(cmpCar);
+    const scaleCmp=cmp.lapTime?(cmp.lapTime/(eCmp[eCmp.length-1]||1)):1;
+    const nOut=Math.max(refCar.length,cmpCar.length);
+    const delta=[];
+    for(let i=0;i<nOut;i++){
+      const p=i/(nOut-1||1);
+      const fi1=p*(refCar.length-1),lo1=Math.floor(fi1),hi1=Math.min(lo1+1,refCar.length-1),fr1=fi1-lo1;
+      const t1=(eRef[lo1]+(eRef[hi1]-eRef[lo1])*fr1)*scaleRef;
+      const fi2=p*(cmpCar.length-1),lo2=Math.floor(fi2),hi2=Math.min(lo2+1,cmpCar.length-1),fr2=fi2-lo2;
+      const t2=(eCmp[lo2]+(eCmp[hi2]-eCmp[lo2])*fr2)*scaleCmp;
+      delta.push(t2-t1);
+    }
+    deltaLines.push({delta,color:traces[si].color,label:traces[si].label,dash:traces[si].dash});
   }
 
-  const maxAbs=Math.max(0.5,Math.max(...delta.map(Math.abs)));
+  // Compute scale from all deltas
+  const allDeltas=deltaLines.flatMap(dl=>dl.delta);
+  const maxAbs=Math.max(0.5,Math.max(...allDeltas.map(Math.abs)));
   const yMin=-maxAbs,yMax=maxAbs,range=yMax-yMin;
 
   // Grid
@@ -6421,7 +6575,7 @@ function drawDelta(canvasId,d1,d2,meta,s0,s1,turns){
     ctx.textAlign="right";ctx.fillText(v.toFixed(2)+"s",ml-4,y+3);
   }
 
-  // Turn markers on x-axis
+  // Turn markers
   if(turns&&turns.length){
     ctx.font="bold 8px sans-serif";ctx.textAlign="center";
     turns.forEach(t=>{
@@ -6438,36 +6592,45 @@ function drawDelta(canvasId,d1,d2,meta,s0,s1,turns){
   ctx.beginPath();ctx.moveTo(ml,zeroY);ctx.lineTo(ml+pw,zeroY);ctx.stroke();
   ctx.setLineDash([]);
 
-  // Delta fill
-  ctx.beginPath();ctx.moveTo(ml,zeroY);
-  for(let i=0;i<delta.length;i++){
-    const x=ml+pw*(i/(delta.length-1||1));
-    const y=mt+ph*(1-(delta[i]-yMin)/range);
-    ctx.lineTo(x,y);
-  }
-  ctx.lineTo(ml+pw,zeroY);ctx.closePath();
-  ctx.fillStyle="rgba(59,130,246,0.08)";ctx.fill();
+  // Draw each delta line
+  deltaLines.forEach(dl=>{
+    // Fill (only for first delta)
+    if(dl===deltaLines[0]){
+      ctx.beginPath();ctx.moveTo(ml,zeroY);
+      for(let i=0;i<dl.delta.length;i++){
+        const x=ml+pw*(i/(dl.delta.length-1||1));
+        const y=mt+ph*(1-(dl.delta[i]-yMin)/range);
+        ctx.lineTo(x,y);
+      }
+      ctx.lineTo(ml+pw,zeroY);ctx.closePath();
+      ctx.fillStyle="rgba(59,130,246,0.08)";ctx.fill();
+    }
+    // Line
+    ctx.strokeStyle=dl.color;ctx.lineWidth=1.5;
+    if(dl.dash&&dl.dash.length)ctx.setLineDash(dl.dash);
+    ctx.beginPath();
+    for(let i=0;i<dl.delta.length;i++){
+      const x=ml+pw*(i/(dl.delta.length-1||1));
+      const y=mt+ph*(1-(dl.delta[i]-yMin)/range);
+      if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+    }
+    ctx.stroke();ctx.setLineDash([]);
 
-  // Delta line
-  ctx.strokeStyle=meta.c1;ctx.lineWidth=1.5;ctx.beginPath();
-  for(let i=0;i<delta.length;i++){
-    const x=ml+pw*(i/(delta.length-1||1));
-    const y=mt+ph*(1-(delta[i]-yMin)/range);
-    if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
-  }
-  ctx.stroke();
+    // End badge
+    const finalDelta=dl.delta[dl.delta.length-1];
+    ctx.font="bold 9px sans-serif";
+    ctx.fillStyle=dl.color;ctx.textAlign="right";
+    const badgeY=mt+10+deltaLines.indexOf(dl)*14;
+    const sign=finalDelta>0?"+":"";
+    ctx.fillText(`${dl.label}: ${sign}${finalDelta.toFixed(3)}s vs ${traces[0].label}`,ml+pw,badgeY);
+  });
 
-  // End badge
-  const finalDelta=delta[delta.length-1];
-  ctx.font="bold 10px sans-serif";
-  ctx.fillStyle=finalDelta>0?meta.c1:meta.c2;
-  ctx.textAlign="right";
-  ctx.fillText(`${finalDelta>0?meta.label1:meta.label2} faster by ${Math.abs(finalDelta).toFixed(3)}s`,ml+pw,mt+12);
-
-  // Legend labels (above = D1 faster, below = D2 faster)
+  // Legend labels
   ctx.font="8px sans-serif";ctx.globalAlpha=0.6;
-  ctx.fillStyle=meta.c1;ctx.textAlign="left";ctx.fillText(`▲ ${meta.label1} faster`,ml+4,mt+ph*0.15);
-  ctx.fillStyle=meta.c2;ctx.fillText(`▼ ${meta.label2} faster`,ml+4,mt+ph*0.9);
+  ctx.fillStyle=traces[0].color;ctx.textAlign="left";
+  ctx.fillText(`\u25B2 ${traces[0].label} faster`,ml+4,mt+ph*0.15);
+  ctx.fillStyle=textColor;
+  ctx.fillText(`\u25BC others faster`,ml+4,mt+ph*0.9);
   ctx.globalAlpha=1;
 }
 
@@ -6481,7 +6644,7 @@ function redrawAll(){
     drawTopVsMean();
     drawMultiDriverChart();
     if(STATE.sessionType==="practice")renderLongRuns();
-    if(STATE.telemSlots[0]&&STATE.telemSlots[1]&&STATE.telemSlots[0].data&&STATE.telemSlots[1].data)drawTelemCharts();
+    if(STATE.telemSlots.some(s=>s&&s.data))drawTelemCharts();
   }
 }
 window.addEventListener("resize",redrawAll);
@@ -6694,8 +6857,9 @@ function renderAIAnalysis(){
    LAP COMPARISON AI ANALYSIS
    ══════════════════════════════════════════════════════════════════════════════ */
 function openLapComparisonAI(){
-  const s0=STATE.telemSlots[0],s1=STATE.telemSlots[1];
-  if(!s0||!s1||!s0.data||!s1.data){alert("Load telemetry comparison first");return;}
+  const filled=STATE.telemSlots.filter(s=>s&&s.data);
+  if(filled.length<2){alert("Load telemetry comparison with at least 2 drivers first");return;}
+  const s0=filled[0],s1=filled[1];
   
   document.getElementById("ai-modal-overlay").classList.add("open");
   document.getElementById("ai-body").innerHTML=`
@@ -6721,8 +6885,9 @@ function startLapComparisonAI(){
 }
 
 function buildLapComparisonSummary(){
-  const s0=STATE.telemSlots[0],s1=STATE.telemSlots[1];
-  if(!s0||!s1||!s0.data||!s1.data)return "";
+  const filled=STATE.telemSlots.filter(s=>s&&s.data);
+  if(filled.length<2)return "";
+  const s0=filled[0],s1=filled[1];
   
   const drivers=STATE.sessionData?.drivers||{};
   const drv1=drivers[s0.dn]||{};
