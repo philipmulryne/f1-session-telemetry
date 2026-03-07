@@ -111,6 +111,17 @@ canvas{display:block;width:100%}
 .telem-picker .picker-best{font-size:10px;padding:3px 8px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;white-space:nowrap;transition:all .15s}
 .telem-picker .picker-best:hover{background:var(--green);color:#000;border-color:var(--green)}
 
+/* ERS zone indicators */
+.ers-toggle{font-size:10px;padding:3px 10px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface2);color:var(--text2);cursor:pointer;transition:all .15s}
+.ers-toggle:hover{border-color:var(--yellow);color:var(--yellow)}
+.ers-toggle.active{background:rgba(234,179,8,.15);border-color:var(--yellow);color:var(--yellow)}
+.ers-toggle.loading{opacity:.6;pointer-events:none}
+.ers-tooltip{position:fixed;display:none;max-width:280px;padding:8px 10px;border-radius:var(--radius);background:rgba(0,0,0,.92);color:#e4e4e7;font-size:11px;line-height:1.4;pointer-events:none;z-index:9999;border:1px solid rgba(255,255,255,.1)}
+.ers-tooltip .ers-tt-type{font-weight:800;font-size:10px;text-transform:uppercase;margin-bottom:2px}
+.ers-tooltip .ers-tt-type.DEPLOYMENT{color:#22c55e}
+.ers-tooltip .ers-tt-type.CLIPPING{color:#eab308}
+.ers-tooltip .ers-tt-type.SUPER_CLIPPING{color:#ef4444}
+
 /* Loading / empty */
 .loading{text-align:center;padding:60px 20px;color:var(--text2)}
 .spinner{width:24px;height:24px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .6s linear infinite;margin:0 auto 12px}
@@ -587,6 +598,10 @@ let STATE={
   replayMaxLap:0,
   replaySpeed:1,            // laps per second
   replayTimer:null,
+  // ERS Zones
+  ersEnabled:false,         // toggle on/off
+  ersZones:{},              // cache: "dn_lapNum" -> [{type,start_pct,end_pct,reason}]
+  ersBusy:false,            // loading state
 };
 let TELEM_CACHE={};
 
@@ -1327,8 +1342,10 @@ function renderSessionView(){
         <div id="telem-charts" style="display:none">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 12px;background:var(--surface2);border-radius:var(--radius)">
             <span style="font-size:11px;color:var(--text2)">Telemetry loaded</span>
+            <button class="ers-toggle" id="btn-ers" onclick="toggleErsZones()" title="AI-detected ERS deployment, clipping &amp; super-clipping zones">&#9889; ERS Zones</button>
             <button class="ctrl-btn" onclick="openLapComparisonAI()" style="margin-left:auto;background:linear-gradient(135deg,#8b5cf6,#3b82f6);color:#fff;border-color:transparent">&#129302; AI Analysis</button>
           </div>
+          <div class="ers-tooltip" id="ers-tooltip"></div>
           <div class="chart-row">
             <div class="chart-box full" style="min-width:0"><div class="chart-label">Speed (km/h)</div><canvas id="cv-speed" height="180"></canvas></div>
           </div>
@@ -1338,7 +1355,10 @@ function renderSessionView(){
           </div>
           <div class="chart-row">
             <div class="chart-box" style="min-width:0"><div class="chart-label">Gear</div><canvas id="cv-gear" height="100"></canvas></div>
-            <div class="chart-box" style="min-width:0"><div class="chart-label">Delta (s)</div><canvas id="cv-delta" height="120"></canvas></div>
+            <div class="chart-box" style="min-width:0"><div class="chart-label">RPM</div><canvas id="cv-rpm" height="100"></canvas></div>
+          </div>
+          <div class="chart-row">
+            <div class="chart-box full" style="min-width:0"><div class="chart-label">Delta (s)</div><canvas id="cv-delta" height="120"></canvas></div>
           </div>
           <!-- Track Dominance -->
           <div class="chart-row">
@@ -3814,7 +3834,7 @@ async function loadAndDrawTelem(){
   chartsEl.scrollIntoView({behavior:"smooth",block:"start"});
 
   // Show loading state on canvases
-  ["cv-speed","cv-throttle","cv-brake","cv-gear","cv-delta"].forEach(id=>{
+  ["cv-speed","cv-throttle","cv-brake","cv-gear","cv-rpm","cv-delta"].forEach(id=>{
     const c=document.getElementById(id);
     if(c){const cx=c.getContext("2d");cx.clearRect(0,0,c.width,c.height);}
   });
@@ -3832,6 +3852,9 @@ async function loadAndDrawTelem(){
       }
     }
     drawTelemCharts();
+    initErsTooltip();
+    // Auto-fetch ERS zones if toggle is active
+    if(STATE.ersEnabled)fetchAndDrawErs();
   }catch(e){console.error("Telem load error:",e);}
 }
 
@@ -5863,7 +5886,7 @@ function drawTrackDominance(){
    CANVAS TELEMETRY CHARTS
    ══════════════════════════════════════════════════════════════════════════════ */
 /* Fixed canvas heights — never read back from attribute to avoid dpr accumulation */
-const TELEM_HEIGHTS={"cv-speed":180,"cv-throttle":120,"cv-brake":120,"cv-gear":100,"cv-delta":120,"cv-dominance":350};
+const TELEM_HEIGHTS={"cv-speed":180,"cv-throttle":120,"cv-brake":120,"cv-gear":100,"cv-rpm":100,"cv-delta":120,"cv-dominance":350};
 
 /* ── REFERENCE TURN COORDINATES ──
    X,Y from FastF1 circuit_info.corners (2024 season).
@@ -6381,6 +6404,7 @@ function drawTelemCharts(){
   drawTrace("cv-throttle",meta,"throttle",0,100,turns);
   drawTrace("cv-brake",meta,"brake",0,100,turns);
   drawTrace("cv-gear",meta,"n_gear",0,8,turns);
+  drawTrace("cv-rpm",meta,"rpm",0,15000,turns);
 
   // Delta chart: only for 2+ drivers, relative to D1
   const deltaEl=document.getElementById("cv-delta")?.parentElement;
@@ -6393,6 +6417,186 @@ function drawTelemCharts(){
   // Track dominance: only for exactly 2 slots (keep existing logic)
   if(slots.length===2)drawTrackDominance();
   else{const dc=document.getElementById("cv-dominance");if(dc){const cx=dc.getContext("2d");cx.clearRect(0,0,dc.width,dc.height);}}
+
+  // ERS indicators (if enabled)
+  if(STATE.ersEnabled)drawErsIndicators();
+}
+
+/* ── ERS ZONE INDICATORS ── */
+const ERS_COLORS={DEPLOYMENT:"#22c55e",CLIPPING:"#eab308",SUPER_CLIPPING:"#ef4444"};
+const ERS_LABELS={DEPLOYMENT:"Deploy",CLIPPING:"Clip",SUPER_CLIPPING:"S-Clip"};
+let _ersLastMeta=null; // store for redraw
+
+function toggleErsZones(){
+  STATE.ersEnabled=!STATE.ersEnabled;
+  const btn=document.getElementById("btn-ers");
+  if(btn)btn.classList.toggle("active",STATE.ersEnabled);
+  if(STATE.ersEnabled){
+    fetchAndDrawErs();
+  }else{
+    // Redraw charts to remove ERS overlay
+    drawTelemCharts();
+  }
+}
+
+async function fetchAndDrawErs(){
+  const slots=STATE.telemSlots.filter(s=>s&&s.data&&s.data.car&&s.data.car.length);
+  if(slots.length===0)return;
+  const btn=document.getElementById("btn-ers");
+  if(btn)btn.classList.add("loading");
+  STATE.ersBusy=true;
+  const drivers=STATE.sessionData?.drivers||{};
+  const circuit=STATE.activeMeeting?.circuit_short_name||"Unknown";
+
+  try{
+    for(const slot of slots){
+      const key=slot.dn+"_"+slot.lapNum;
+      if(STATE.ersZones[key])continue; // cached
+      // Downsample telemetry to ~50 points
+      const car=slot.data.car;
+      const step=Math.max(1,Math.floor(car.length/50));
+      const samples=[];
+      for(let i=0;i<car.length;i+=step){
+        const d=car[i];
+        samples.push({pct:(i/(car.length-1))*100,speed:d.speed||0,throttle:d.throttle||0,brake:d.brake||0,gear:d.n_gear||0,rpm:d.rpm||0});
+      }
+      const drv=drivers[slot.dn]||{};
+      const drvInfo=(drv.acronym||"#"+slot.dn)+" L"+slot.lapNum;
+      const resp=await fetch("/api/telemetry/ers_zones",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({telemetry_samples:samples,driver_info:drvInfo,circuit})
+      });
+      const data=await resp.json();
+      if(data.error==="NO_KEY"){
+        alert("Claude API key not configured.\nSet ANTHROPIC_API_KEY env var or configure in .app_config.json");
+        STATE.ersEnabled=false;
+        if(btn)btn.classList.remove("active");
+        return;
+      }
+      STATE.ersZones[key]=data.zones||[];
+    }
+    drawErsIndicators();
+  }catch(e){
+    console.warn("ERS zones fetch error:",e);
+  }finally{
+    STATE.ersBusy=false;
+    if(btn)btn.classList.remove("loading");
+  }
+}
+
+function drawErsIndicators(){
+  const canvas=document.getElementById("cv-speed");
+  if(!canvas)return;
+  const ctx=canvas.getContext("2d");
+  const dpr=window.devicePixelRatio||1;
+  // Re-read canvas dimensions (already set by drawTrace)
+  const W=canvas.width/dpr;
+  const H=canvas.height/dpr;
+  const ml=44,mr=12,mt=6,mb=28;
+  const pw=W-ml-mr,ph=H-mt-mb;
+
+  const slots=STATE.telemSlots.filter(s=>s&&s.data&&s.data.car&&s.data.car.length);
+  if(slots.length===0)return;
+
+  ctx.save();
+  ctx.scale(dpr,dpr);
+
+  const laneH=8; // height of each ERS zone bar
+  const laneGap=2;
+  const baseY=mt+2; // start from top of chart area
+
+  // Store hit areas for tooltip
+  canvas._ersHitAreas=[];
+
+  slots.forEach((slot,si)=>{
+    const key=slot.dn+"_"+slot.lapNum;
+    const zones=STATE.ersZones[key];
+    if(!zones||!zones.length)return;
+    const y=baseY+si*(laneH+laneGap);
+
+    zones.forEach(z=>{
+      const x1=ml+pw*(z.start_pct/100);
+      const x2=ml+pw*(z.end_pct/100);
+      const w=Math.max(x2-x1,3);
+      const col=ERS_COLORS[z.type]||"#888";
+
+      // Draw semi-transparent band
+      ctx.globalAlpha=0.25;
+      ctx.fillStyle=col;
+      ctx.fillRect(x1,y,w,laneH);
+
+      // Border
+      ctx.globalAlpha=0.7;
+      ctx.strokeStyle=col;
+      ctx.lineWidth=1;
+      ctx.strokeRect(x1,y,w,laneH);
+
+      // Label (only if bar is wide enough)
+      if(w>24){
+        ctx.globalAlpha=0.9;
+        ctx.font="bold 7px sans-serif";
+        ctx.fillStyle=col;
+        ctx.textAlign="center";
+        ctx.textBaseline="middle";
+        ctx.fillText(ERS_LABELS[z.type]||z.type,x1+w/2,y+laneH/2);
+      }
+
+      ctx.globalAlpha=1;
+
+      // Store hit area for tooltip (in CSS pixels)
+      canvas._ersHitAreas.push({x:x1,y:y,w:w,h:laneH,zone:z,slotIdx:si,slot});
+    });
+
+    // Driver label at left (for multi-driver)
+    if(slots.length>1){
+      const drivers=STATE.sessionData?.drivers||{};
+      const drv=drivers[slot.dn]||{};
+      ctx.globalAlpha=0.6;
+      ctx.font="bold 7px sans-serif";
+      ctx.fillStyle="#fff";
+      ctx.textAlign="right";
+      ctx.textBaseline="middle";
+      ctx.fillText(drv.acronym||"D"+(si+1),ml-3,y+laneH/2);
+      ctx.globalAlpha=1;
+    }
+  });
+
+  ctx.restore();
+}
+
+// Tooltip hover for ERS zones
+function initErsTooltip(){
+  const canvas=document.getElementById("cv-speed");
+  const tooltip=document.getElementById("ers-tooltip");
+  if(!canvas||!tooltip)return;
+  if(canvas._ersListenerAdded)return;
+  canvas._ersListenerAdded=true;
+
+  canvas.addEventListener("mousemove",function(e){
+    if(!STATE.ersEnabled||!canvas._ersHitAreas||!canvas._ersHitAreas.length){tooltip.style.display="none";return;}
+    const rect=canvas.getBoundingClientRect();
+    const dpr=window.devicePixelRatio||1;
+    const mx=e.clientX-rect.left;
+    const my=e.clientY-rect.top;
+
+    let hit=null;
+    for(const a of canvas._ersHitAreas){
+      if(mx>=a.x&&mx<=a.x+a.w&&my>=a.y&&my<=a.y+a.h){hit=a;break;}
+    }
+    if(hit){
+      const drivers=STATE.sessionData?.drivers||{};
+      const drv=drivers[hit.slot.dn]||{};
+      const drvName=drv.acronym||"D"+(hit.slotIdx+1);
+      tooltip.innerHTML=`<div class="ers-tt-type ${hit.zone.type}">${hit.zone.type.replace("_"," ")} — ${drvName} L${hit.slot.lapNum}</div><div>${hit.zone.reason||"No details"}</div>`;
+      tooltip.style.display="block";
+      tooltip.style.left=(e.clientX+12)+"px";
+      tooltip.style.top=(e.clientY-10)+"px";
+    }else{
+      tooltip.style.display="none";
+    }
+  });
+  canvas.addEventListener("mouseleave",function(){tooltip.style.display="none";});
 }
 
 function drawTrace(canvasId,meta,field,yMin,yMax,turns){

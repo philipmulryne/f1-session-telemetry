@@ -856,6 +856,74 @@ def telemetry_compare_laps():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/telemetry/ers_zones", methods=["POST"])
+def telemetry_ers_zones():
+    """Analyze telemetry data to identify ERS clipping, super-clipping, and deployment zones."""
+    try:
+        data = request.get_json(force=True)
+        telemetry_samples = data.get("telemetry_samples", [])
+        driver_info = data.get("driver_info", "")
+        circuit = data.get("circuit", "Unknown")
+
+        if not telemetry_samples or len(telemetry_samples) < 10:
+            return jsonify({"error": "Insufficient telemetry data"}), 400
+
+        api_key = _get_claude_key()
+        if not api_key:
+            return jsonify({"error": "NO_KEY", "message": "Claude API key not configured"}), 400
+
+        # Build a compact telemetry table for the prompt
+        header = "pct | speed | throttle | brake | gear | rpm"
+        rows = []
+        for s in telemetry_samples:
+            rows.append(f"{s.get('pct',0):.1f}% | {s.get('speed',0):.0f} | {s.get('throttle',0):.0f} | {s.get('brake',0):.0f} | {s.get('gear',0)} | {s.get('rpm',0):.0f}")
+        telem_table = header + "\n" + "\n".join(rows)
+
+        prompt = f"""You are an expert F1 telemetry engineer analyzing Energy Recovery System (ERS) behavior from car telemetry data.
+
+Circuit: {circuit}
+Driver: {driver_info}
+
+Telemetry data (sampled across the lap):
+{telem_table}
+
+Analyze the speed, throttle, and RPM traces to identify zones where:
+
+1. **DEPLOYMENT** — ERS deploying stored energy for extra power. Signs: speed increasing faster than expected at full throttle, RPM patterns showing electrical assist, strong acceleration on straights.
+
+2. **CLIPPING** — MGU-K harvesting limiting available power. Signs: driver at 100% throttle but speed gain rate is notably lower than in deployment zones, RPM dipping or plateauing, slight power deficit visible.
+
+3. **SUPER_CLIPPING** — Aggressive harvesting causing significant power loss. Signs: very noticeable speed deficit at full throttle, driver clearly power-limited, RPM significantly constrained.
+
+Return ONLY valid JSON (no markdown, no code fences) in this exact format:
+{{"zones": [
+  {{"type": "DEPLOYMENT", "start_pct": 15.0, "end_pct": 22.0, "reason": "your explanation here"}},
+  {{"type": "CLIPPING", "start_pct": 45.0, "end_pct": 52.0, "reason": "your explanation here"}}
+]}}
+
+Rules:
+- start_pct and end_pct are percentages of lap distance (0-100)
+- Only include zones you have reasonable confidence about
+- Keep reasons concise (under 30 words each)
+- Typically a lap has 2-5 deployment zones and 1-3 clipping zones
+- If you cannot determine any zones, return {{"zones": []}}"""
+
+        raw = _call_claude_for_prompt(api_key, prompt, max_tokens=2048, temperature=0.3)
+
+        # Parse JSON from response (handle potential markdown wrapping)
+        text = raw.strip()
+        if text.startswith("```"):
+            text = text.split("\n", 1)[-1].rsplit("```", 1)[0].strip()
+        parsed = json.loads(text)
+        zones = parsed.get("zones", [])
+
+        return jsonify({"ok": True, "zones": zones})
+    except json.JSONDecodeError:
+        return jsonify({"ok": True, "zones": [], "warning": "Could not parse AI response"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/telemetry/chat", methods=["POST"])
 def telemetry_chat():
     try:
