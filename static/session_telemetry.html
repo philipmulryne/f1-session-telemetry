@@ -1717,25 +1717,30 @@ function renderSessionView(){
         </div>
       </div>
       <!-- Speed Trap Rankings (3 columns: ST, I1, I2) -->
-      ${!isRace?`
       <div class="chart-row">
         <div class="chart-box full" style="min-width:0">
           <div class="chart-label">&#9889; Speed Trap Rankings</div>
           <div class="speed-rankings-wrap" id="speed-rankings-wrap"></div>
         </div>
-      </div>`:""}
+      </div>
       <!-- Top Speed vs Mean Speed scatter -->
-      ${!isRace?`
       <div class="chart-row">
         <div class="chart-box full" style="min-width:0">
-          <div class="chart-label">&#128202; Top Speed vs Mean Speed (Best Lap per Team)</div>
-          <div style="font-size:10px;color:var(--text2);margin-bottom:6px"><b>Mean Speed</b> = track length / best lap time. <b>Top Speed</b> = highest of I1, I2, ST readings across all laps. Corner annotations indicate aero and deployment characteristics.</div>
+          <div class="chart-label" style="display:flex;align-items:center;gap:8px">&#128202; Top Speed vs Mean Speed (Best Lap per Team)
+            <select id="tvm-speed-src" onchange="drawTopVsMean()" style="font-size:10px;padding:1px 4px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:4px">
+              <option value="max">Top Speed: Max (ST/I1/I2)</option>
+              <option value="st">Top Speed: Speed Trap</option>
+              <option value="i1">Top Speed: Intermediate 1</option>
+              <option value="i2">Top Speed: Intermediate 2</option>
+            </select>
+          </div>
+          <div style="font-size:10px;color:var(--text2);margin-bottom:6px"><b>Mean Speed</b> = track length / best lap time. <b>Top Speed</b> = highest speed from chosen source across all laps. Corner annotations indicate aero and deployment characteristics.</div>
           <div class="tvm-wrap" id="tvm-wrap" style="position:relative;height:420px">
             <canvas id="tvm-canvas"></canvas>
             <div class="chart-tooltip" id="tvm-tooltip"></div>
           </div>
         </div>
-      </div>`:""}
+      </div>
       <!-- Driving Phases (Braking / Neutral / Partial / Max Throttle) -->
       <div class="chart-row">
         <div class="chart-box full" style="min-width:0">
@@ -6235,10 +6240,12 @@ function renderSpeedRankings(){
   const driverBest={};
   laps.forEach(l=>{
     const dn=l.driver_number;
-    if(!driverBest[dn])driverBest[dn]={st:0,i1:0,i2:0,dn};
+    if(!driverBest[dn])driverBest[dn]={st:0,i1:0,i2:0,top:0,dn};
     if(l.st_speed>driverBest[dn].st)driverBest[dn].st=l.st_speed;
     if(l.i1_speed>driverBest[dn].i1)driverBest[dn].i1=l.i1_speed;
     if(l.i2_speed>driverBest[dn].i2)driverBest[dn].i2=l.i2_speed;
+    const mx=Math.max(l.st_speed||0,l.i1_speed||0,l.i2_speed||0);
+    if(mx>driverBest[dn].top)driverBest[dn].top=mx;
   });
   const all=Object.values(driverBest);
   if(!all.length){el.innerHTML='<div style="color:var(--text2);font-size:12px;padding:16px">No speed data</div>';return;}
@@ -6262,7 +6269,7 @@ function renderSpeedRankings(){
     html+="</div>";
     return html;
   }
-  el.innerHTML=renderColumn("Speed Trap (Finish)","st",all)+renderColumn("Intermediate 1","i1",all)+renderColumn("Intermediate 2","i2",all);
+  el.innerHTML=renderColumn("Top Speed (Max)","top",all)+renderColumn("Speed Trap (Finish)","st",all)+renderColumn("Intermediate 1","i1",all)+renderColumn("Intermediate 2","i2",all);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -6303,23 +6310,35 @@ function drawTopVsMean(){
     TVM_POINTS=[];return;
   }
 
+  // Speed source selector
+  const tvmSrcSel=document.getElementById("tvm-speed-src");
+  const tvmSrc=tvmSrcSel?tvmSrcSel.value:"max";
+  function _tvmSpd(l){
+    if(tvmSrc==="st")return l.st_speed||0;
+    if(tvmSrc==="i1")return l.i1_speed||0;
+    if(tvmSrc==="i2")return l.i2_speed||0;
+    return Math.max(l.st_speed||0,l.i1_speed||0,l.i2_speed||0);
+  }
+  const tvmSrcLabel=tvmSrc==="st"?"Speed Trap":tvmSrc==="i1"?"Intermediate 1":tvmSrc==="i2"?"Intermediate 2":"Top Speed";
+
   // Best lap per team for mean speed; max speed across ALL laps for top speed
   const bestByTeam={};
-  const maxSpeedByTeam={};  // track the absolute max speed across all laps
+  const maxSpeedByTeam={};
   laps.forEach(l=>{
     const drv=drivers[l.driver_number]||{};
     const team=drv.team||"Unknown";
     const meanSpd=(trackKm/l.lap_duration)*3600;
+    const curSpd=_tvmSpd(l);
     const speeds=[l.st_speed||0,l.i1_speed||0,l.i2_speed||0];
-    const maxSpd=Math.max(...speeds);
-    const spdZone=maxSpd===(l.i1_speed||0)?"I1":maxSpd===(l.i2_speed||0)?"I2":"ST";
+    const maxAll=Math.max(...speeds);
+    const spdZone=maxAll===(l.i1_speed||0)?"I1":maxAll===(l.i2_speed||0)?"I2":"ST";
     // Best lap by duration
     if(!bestByTeam[team]||l.lap_duration<bestByTeam[team].lap_duration){
       bestByTeam[team]={...l,team,acronym:drv.acronym||"#"+l.driver_number,meanSpeed:meanSpd};
     }
-    // Track max speed across all laps for this team
-    if(!maxSpeedByTeam[team]||maxSpd>maxSpeedByTeam[team].topSpeed){
-      maxSpeedByTeam[team]={topSpeed:maxSpd,topSpeedZone:spdZone,stSpeed:l.st_speed||0,i1Speed:l.i1_speed||0,i2Speed:l.i2_speed||0};
+    // Track max speed across all laps for this team (using selected source)
+    if(!maxSpeedByTeam[team]||curSpd>maxSpeedByTeam[team].topSpeed){
+      maxSpeedByTeam[team]={topSpeed:curSpd,topSpeedZone:spdZone,stSpeed:l.st_speed||0,i1Speed:l.i1_speed||0,i2Speed:l.i2_speed||0};
     }
   });
   // Merge: best lap mean speed + max top speed across all laps
@@ -6408,7 +6427,7 @@ function drawTopVsMean(){
 
   ctx.fillStyle=textCol;ctx.font="bold 12px -apple-system,BlinkMacSystemFont,sans-serif";
   ctx.textAlign="center";ctx.textBaseline="bottom";ctx.fillText("Mean Speed (km/h)",PAD.left+cw/2,H-4);
-  ctx.save();ctx.translate(14,PAD.top+ch/2);ctx.rotate(-Math.PI/2);ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText("Top Speed (km/h)",0,0);ctx.restore();
+  ctx.save();ctx.translate(14,PAD.top+ch/2);ctx.rotate(-Math.PI/2);ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(tvmSrcLabel+" (km/h)",0,0);ctx.restore();
 
   // Plot team dots with glow — inliers only
   TVM_POINTS=[];
