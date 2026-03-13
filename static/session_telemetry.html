@@ -333,6 +333,60 @@ canvas{display:block;width:100%}
 .pit-verdict.good{background:rgba(34,197,94,.12);color:var(--green)}
 .pit-verdict.bad{background:rgba(225,6,0,.1);color:var(--accent)}
 .pit-verdict.neutral{background:rgba(255,255,255,.05);color:var(--text2)}
+/* Fuel-corrected pace tables */
+.fc-table{width:100%;border-collapse:collapse;font-size:11px;font-variant-numeric:tabular-nums}
+.fc-table th{background:var(--surface);color:var(--text2);font-weight:600;padding:5px 8px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;position:sticky;top:0;z-index:1;cursor:pointer}
+.fc-table th:hover{color:var(--text)}
+.fc-table th.fc-sorted{color:var(--blue)}
+.fc-table td{padding:4px 8px;border-bottom:1px solid rgba(255,255,255,.04);white-space:nowrap}
+.fc-table tr:hover{background:rgba(255,255,255,.03)}
+.fc-best{color:var(--purple);font-weight:700}
+.fc-delta-good{color:var(--green);font-weight:600;font-size:10px}
+.fc-delta-bad{color:var(--accent);font-weight:600;font-size:10px}
+.fc-delta-neutral{color:var(--text2);font-size:10px}
+.fc-correction{color:var(--text2);font-size:9px;font-style:italic}
+.fc-view-toggle{display:flex;gap:0;margin:6px 8px 8px}
+.fc-view-btn{padding:4px 12px;font-size:9px;font-weight:700;color:var(--text2);background:var(--surface2);border:1px solid var(--border);cursor:pointer;transition:all .12s}
+.fc-view-btn:first-child{border-radius:4px 0 0 4px}
+.fc-view-btn:last-child{border-radius:0 4px 4px 0}
+.fc-view-btn.active{background:var(--blue);border-color:var(--blue);color:#fff}
+.fc-note{font-size:9px;color:var(--text2);padding:6px 8px 4px;font-style:italic}
+/* Race Pace Distribution (Box/Whisker & Violin) */
+.rpd-panel-toolbar{display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.rpd-toggle{padding:3px 10px;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:10px;font-weight:600;cursor:pointer;transition:all .12s}
+.rpd-toggle:hover{background:var(--surface3);color:var(--text)}
+.rpd-toggle.active{background:var(--blue);color:#fff;border-color:transparent}
+.rpd-chart-row{display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.rpd-chart-box{flex:1;min-width:400px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:10px;position:relative}
+.rpd-chart-box .chart-label{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.rpd-methodology{background:rgba(59,130,246,.06);border:1px solid rgba(59,130,246,.2);border-radius:var(--radius);padding:10px 12px;margin-top:10px;font-size:10px;color:var(--text2);line-height:1.6}
+.rpd-methodology summary{font-weight:700;color:var(--blue);cursor:pointer;font-size:11px;margin-bottom:4px}
+.rpd-methodology strong{color:var(--text)}
+.rpd-methodology code{background:var(--surface2);padding:1px 4px;border-radius:3px;font-size:10px;font-family:"SF Mono",Monaco,Consolas,monospace}
+.rpd-methodology .warn{color:var(--yellow);font-weight:600}
+.rpd-tooltip{position:absolute;display:none;pointer-events:none;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:10px;color:var(--text);box-shadow:0 6px 20px rgba(0,0,0,.4);z-index:10;min-width:160px;line-height:1.6;white-space:nowrap}
+.rpd-tooltip .tt-driver{font-weight:700;font-size:12px;margin-bottom:3px}
+.rpd-tooltip .tt-row{display:flex;justify-content:space-between;gap:12px}
+.rpd-tooltip .tt-label{color:var(--text2)}
+.rpd-tooltip .tt-val{font-weight:700;font-variant-numeric:tabular-nums}
+.rpd-tooltip .tt-best{color:var(--purple)}
+.rpd-tooltip .tt-sep{border-top:1px solid var(--border);margin:3px 0}
+.rpd-pinned-wrap{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;min-height:0}
+.rpd-pinned-card{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:10px;line-height:1.6;min-width:180px;max-width:240px;position:relative;transition:all .15s}
+.rpd-pinned-card .pin-close{position:absolute;top:2px;right:6px;cursor:pointer;font-size:12px;color:var(--text2);background:none;border:none;padding:0}
+.rpd-pinned-card .pin-close:hover{color:var(--accent)}
+.rpd-pinned-card .pin-driver{font-weight:700;font-size:12px;margin-bottom:2px}
+.rpd-pinned-card .pin-name{font-size:9px;color:var(--text2);margin-bottom:4px}
+.rpd-pinned-card .pin-row{display:flex;justify-content:space-between;gap:8px}
+.rpd-pinned-card .pin-label{color:var(--text2)}
+.rpd-pinned-card .pin-val{font-weight:700;font-variant-numeric:tabular-nums}
+.rpd-pinned-card .pin-best{color:var(--purple)}
+.rpd-guide-box{background:rgba(139,92,246,.06);border:1px solid rgba(139,92,246,.2);border-radius:var(--radius);padding:10px 12px;margin-top:10px;font-size:10px;color:var(--text2);line-height:1.7}
+.rpd-guide-box summary{font-weight:700;color:var(--purple);cursor:pointer;font-size:11px;margin-bottom:4px}
+.rpd-guide-box strong{color:var(--text)}
+.rpd-guide-box .guide-legend{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0}
+.rpd-guide-box .guide-item{display:flex;align-items:center;gap:4px;font-size:9px}
+.rpd-guide-box .guide-swatch{width:12px;height:3px;border-radius:1px;flex-shrink:0}
 /* Replay controls */
 .replay-bar{display:flex;align-items:center;gap:8px;padding:6px 12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px}
 .replay-bar .replay-btn{background:var(--surface3);border:1px solid var(--border);color:var(--text);padding:4px 10px;border-radius:4px;font-size:11px;font-weight:700;cursor:pointer;transition:all .12s}
@@ -402,6 +456,31 @@ canvas{display:block;width:100%}
 .ai-chat-input{flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface2);color:var(--text);font-size:13px;outline:none}
 .ai-chat-input:focus{border-color:var(--blue)}
 .ai-chat-input:disabled{opacity:.5}
+
+/* Pit Stops Timing */
+.ps-summary{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.ps-summary-card{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius);padding:8px 14px;min-width:120px;font-size:11px}
+.ps-summary-card .ps-label{font-size:9px;text-transform:uppercase;letter-spacing:.05em;color:var(--text2);font-weight:700;margin-bottom:2px}
+.ps-summary-card .ps-val{font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}
+.ps-table{width:100%;border-collapse:collapse;font-size:11px;font-variant-numeric:tabular-nums}
+.ps-table th{background:var(--surface2);color:var(--text2);font-weight:700;padding:6px 8px;border-bottom:1px solid var(--border);text-align:left;white-space:nowrap;position:sticky;top:0;z-index:1;font-size:10px;text-transform:uppercase;letter-spacing:.04em;cursor:pointer;user-select:none}
+.ps-table th:hover{color:var(--text)}
+.ps-table th.ps-sorted{color:var(--blue)}
+.ps-table td{padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.04);white-space:nowrap}
+.ps-table tr:hover{background:rgba(255,255,255,.03)}
+.ps-fastest{color:var(--green);font-weight:700}
+.ps-slowest{color:var(--accent);font-weight:700}
+.ps-bar-cell{display:flex;align-items:center;gap:6px}
+.ps-bar-bg{flex:1;height:8px;border-radius:4px;background:rgba(255,255,255,.06);overflow:hidden;max-width:120px}
+.ps-bar{height:100%;border-radius:4px;transition:width .3s}
+.ps-stop-num{display:inline-block;width:18px;height:18px;line-height:18px;text-align:center;border-radius:50%;background:var(--surface3);font-weight:700;font-size:10px;color:var(--text2)}
+.ps-team-dot{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.ps-chart-wrap{position:relative;margin-top:12px}
+.ps-view-toggle{display:flex;gap:0;margin-bottom:8px}
+.ps-view-btn{padding:4px 12px;font-size:10px;font-weight:700;color:var(--text2);background:var(--surface2);border:1px solid var(--border);cursor:pointer;transition:all .12s}
+.ps-view-btn:first-child{border-radius:var(--radius) 0 0 var(--radius)}
+.ps-view-btn:last-child{border-radius:0 var(--radius) var(--radius) 0}
+.ps-view-btn.active{background:var(--blue);border-color:var(--blue);color:#fff}
 </style>
 </head>
 <body>
@@ -419,6 +498,7 @@ canvas{display:block;width:100%}
         <button class="theme-btn" onclick="setTheme('dark')" title="Dark">&#127761;</button>
         <button class="theme-btn" onclick="setTheme('dim')" title="Dim">&#127762;</button>
         <button class="theme-btn" onclick="setTheme('light')" title="Light">&#9728;&#65039;</button>
+        <button class="theme-btn" onclick="openSettingsModal()" title="API Key Settings" style="font-size:16px">&#9881;&#65039;</button>
       </div>
     </div>
 
@@ -472,6 +552,18 @@ function compoundColor(c){return COMPOUND_COLORS[(c||"").toUpperCase()]||"var(--
 function esc(s){const d=document.createElement("div");d.textContent=s;return d.innerHTML}
 function fmtTime(s){if(!s||s<=0)return"—";const m=Math.floor(s/60);const sec=(s-m*60);return m>0?`${m}:${sec.toFixed(3).padStart(6,"0")}`:sec.toFixed(3)}
 function fmtGap(g){if(!g||Math.abs(g)<0.0005)return"";return(g>0?"+":"")+g.toFixed(3)}
+function renderMarkdown(text){
+  return(text||"")
+    .replace(/^## (.+)$/gm,'<h2 style="font-size:14px;font-weight:700;margin:12px 0 6px;color:var(--text)">$1</h2>')
+    .replace(/^### (.+)$/gm,'<h3 style="font-size:12px;font-weight:700;margin:10px 0 4px;color:var(--text)">$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/`(.+?)`/g,'<code style="background:var(--surface);padding:1px 4px;border-radius:3px;font-size:10px">$1</code>')
+    .replace(/^- (.+)$/gm,'<li style="margin:2px 0 2px 16px">$1</li>')
+    .replace(/^\d+\. (.+)$/gm,'<li style="margin:2px 0 2px 16px;list-style:decimal">$1</li>')
+    .replace(/\n\n/g,'</p><p style="margin:6px 0">')
+    .replace(/\n/g,'<br>');
+}
 
 /* Track lengths (km) keyed by circuit_short_name from OpenF1 */
 const TRACK_LENGTHS={
@@ -511,6 +603,61 @@ function gpCountryCode(meetingName){
 function isTestMeeting(m){
   const n=((m.meeting_name||"")+" "+(m.circuit_short_name||"")).toLowerCase();
   return n.includes("test")||n.includes("pre-season");
+}
+
+/* Fallback driver map for 2026 season — used when OpenF1 drivers endpoint fails (e.g. auth required during live sessions) */
+const DRIVER_FALLBACK={
+  // McLaren
+  1:{acronym:"NOR",full_name:"Lando NORRIS",team:"McLaren",team_name:"McLaren",team_colour:"FF8000"},
+  81:{acronym:"PIA",full_name:"Oscar PIASTRI",team:"McLaren",team_name:"McLaren",team_colour:"FF8000"},
+  // Red Bull Racing
+  3:{acronym:"VER",full_name:"Max VERSTAPPEN",team:"Red Bull Racing",team_name:"Red Bull Racing",team_colour:"3671C6"},
+  6:{acronym:"HAD",full_name:"Isack HADJAR",team:"Red Bull Racing",team_name:"Red Bull Racing",team_colour:"3671C6"},
+  // Ferrari
+  16:{acronym:"LEC",full_name:"Charles LECLERC",team:"Ferrari",team_name:"Ferrari",team_colour:"E8002D"},
+  44:{acronym:"HAM",full_name:"Lewis HAMILTON",team:"Ferrari",team_name:"Ferrari",team_colour:"E8002D"},
+  // Mercedes
+  63:{acronym:"RUS",full_name:"George RUSSELL",team:"Mercedes",team_name:"Mercedes",team_colour:"27F4D2"},
+  12:{acronym:"ANT",full_name:"Andrea Kimi ANTONELLI",team:"Mercedes",team_name:"Mercedes",team_colour:"27F4D2"},
+  // Aston Martin
+  14:{acronym:"ALO",full_name:"Fernando ALONSO",team:"Aston Martin",team_name:"Aston Martin",team_colour:"229971"},
+  18:{acronym:"STR",full_name:"Lance STROLL",team:"Aston Martin",team_name:"Aston Martin",team_colour:"229971"},
+  // Williams
+  23:{acronym:"ALB",full_name:"Alexander ALBON",team:"Williams",team_name:"Williams",team_colour:"1868DB"},
+  55:{acronym:"SAI",full_name:"Carlos SAINZ",team:"Williams",team_name:"Williams",team_colour:"1868DB"},
+  // Alpine
+  10:{acronym:"GAS",full_name:"Pierre GASLY",team:"Alpine",team_name:"Alpine",team_colour:"0093CC"},
+  43:{acronym:"COL",full_name:"Franco COLAPINTO",team:"Alpine",team_name:"Alpine",team_colour:"0093CC"},
+  // Haas
+  31:{acronym:"OCO",full_name:"Esteban OCON",team:"Haas F1 Team",team_name:"Haas F1 Team",team_colour:"B6BABD"},
+  87:{acronym:"BEA",full_name:"Oliver BEARMAN",team:"Haas F1 Team",team_name:"Haas F1 Team",team_colour:"B6BABD"},
+  // Racing Bulls
+  30:{acronym:"LAW",full_name:"Liam LAWSON",team:"Racing Bulls",team_name:"Racing Bulls",team_colour:"6692FF"},
+  41:{acronym:"LIN",full_name:"Arvid LINDBLAD",team:"Racing Bulls",team_name:"Racing Bulls",team_colour:"6692FF"},
+  // Audi
+  27:{acronym:"HUL",full_name:"Nico HULKENBERG",team:"Audi",team_name:"Audi",team_colour:"F50537"},
+  5:{acronym:"BOR",full_name:"Gabriel BORTOLETO",team:"Audi",team_name:"Audi",team_colour:"F50537"},
+  // Cadillac
+  11:{acronym:"PER",full_name:"Sergio PEREZ",team:"Cadillac",team_name:"Cadillac",team_colour:"C0C0C0"},
+  77:{acronym:"BOT",full_name:"Valtteri BOTTAS",team:"Cadillac",team_name:"Cadillac",team_colour:"C0C0C0"},
+};
+function _fillMissingDrivers(drivers){
+  // Fill in any missing driver info from the fallback map
+  for(const[dn,fb] of Object.entries(DRIVER_FALLBACK)){
+    const num=parseInt(dn);
+    if(!drivers[num]){
+      drivers[num]={...fb,number:num};
+    }else{
+      // Fill empty fields from fallback
+      const d=drivers[num];
+      if(!d.acronym&&fb.acronym)d.acronym=fb.acronym;
+      if(!d.full_name&&fb.full_name)d.full_name=fb.full_name;
+      if(!d.team&&fb.team)d.team=fb.team;
+      if(!d.team_name&&fb.team_name)d.team_name=fb.team_name;
+      if(!d.team_colour&&fb.team_colour)d.team_colour=fb.team_colour;
+    }
+  }
+  return drivers;
 }
 
 function getTrackLengthKm(){
@@ -561,7 +708,7 @@ let STATE={
   // Live refresh
   liveRefresh:false,
   liveTimer:null,
-  liveInterval:15,     // seconds
+  liveInterval:10,     // seconds (reduced for lower latency during live sessions)
   liveCountdown:0,
   liveTick:null,
   // Lasso & annotations on scatter chart
@@ -584,8 +731,12 @@ let STATE={
   rdTempoWindow:5,          // last N laps for tempo calculation (5 or 10)
   rdLapMin:1,               // lap range slider lower bound
   rdLapMax:null,            // lap range slider upper bound (null=max)
+  rdRangeManual:false,      // true when user manually adjusted range slider
   rdShowStrategy:false,     // show tyre strategy timeline view
-  rdStrategyMode:"stints",   // "stints" or "pits" view mode
+  rdStrategyMode:"stints",   // "stints", "position", "pits", or "fuel" view mode
+  rdFuelView:"overall",       // "overall" or "stints" sub-view in fuel tab
+  rdFuelSort:"fuelCorrected", // sort column for fuel tables
+  rdFuelSortAsc:true,         // sort direction for fuel tables
   // Race Control
   rcDriverFilter:null,      // null=all, or driver_number to filter
   rcSoundEnabled:false,     // play sounds on new RC messages
@@ -602,6 +753,9 @@ let STATE={
   ersEnabled:false,         // toggle on/off
   ersZones:{},              // cache: "dn_lapNum" -> [{type,start_pct,end_pct,reason}]
   ersBusy:false,            // loading state
+  // Race Pace Distribution (Box/Whisker & Violin)
+  rpdMode:"raw",            // "raw" or "fc" (fuel-corrected)
+  rpdChart:"box",           // "box", "violin", or "both"
 };
 let TELEM_CACHE={};
 
@@ -702,6 +856,8 @@ async function doLiveRefresh(){
     const data=await r.json();
     if(data.error)return;
     STATE.sessionData=data;
+    // Fill in missing driver info from fallback map
+    if(data.drivers)_fillMissingDrivers(data.drivers);
     if(STATE.sessionType==="qualifying"||STATE.sessionType==="sprint_quali")detectQualiPhases();
     renderRaceControl();
     renderDriverFilters();
@@ -711,10 +867,11 @@ async function doLiveRefresh(){
     drawLapScatter();
     renderSpeedRankings();
     drawTopVsMean();
+    renderSpeedHeatmap();
     drawMultiDriverChart();
     renderStintsTable();
     if(STATE.sessionType==="practice")renderLongRuns();
-    if(STATE.sessionType==="race"||STATE.sessionType==="sprint")renderRaceDashboard();
+    if(STATE.sessionType==="race"||STATE.sessionType==="sprint"){renderRaceDashboard();drawRacePaceDistribution();loadPitStops();}
     const ts=document.getElementById("live-ts");
     if(ts)ts.textContent="Updated "+new Date().toLocaleTimeString();
   }catch(e){console.warn("Live refresh error:",e);}
@@ -758,9 +915,9 @@ function stopReplay(){
   renderRaceControl();
   renderDriverFilters();renderScatterDriverChips();
   renderLapsTable();drawLapScatter();
-  renderSpeedRankings();drawTopVsMean();
+  renderSpeedRankings();drawTopVsMean();renderSpeedHeatmap();
   drawMultiDriverChart();renderStintsTable();
-  if(STATE.sessionType==="race"||STATE.sessionType==="sprint")renderRaceDashboard();
+  if(STATE.sessionType==="race"||STATE.sessionType==="sprint"){renderRaceDashboard();drawRacePaceDistribution();renderPitStops();}
 }
 function replayPlayPause(){
   if(STATE.replayTimer){
@@ -847,7 +1004,7 @@ function replayRenderCurrentLap(){
   drawLapScatter();
   drawMultiDriverChart();
   renderStintsTable();
-  if(STATE.sessionType==="race"||STATE.sessionType==="sprint")renderRaceDashboard();
+  if(STATE.sessionType==="race"||STATE.sessionType==="sprint"){renderRaceDashboard();drawRacePaceDistribution();}
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -940,7 +1097,21 @@ async function loadMeetings(){
   try{
     const r=await fetch(`/api/season/meetings?year=${year}`);
     const meetings=await r.json();
-    if(meetings.error){sel.innerHTML=`<option value="">Error: ${esc(meetings.error)}</option>`;return;}
+    if(meetings.error){
+      sel.innerHTML=`<option value="">Error: ${esc(meetings.error)}</option>`;
+      // Show auth bar if authentication is required
+      if(meetings.auth_required){
+        const ab=document.getElementById("auth-bar");
+        if(ab)ab.style.display="flex";
+      }
+      return;
+    }
+    if(!Array.isArray(meetings)||meetings.length===0){
+      sel.innerHTML='<option value="">No meetings found (auth may be required during live sessions)</option>';
+      const ab=document.getElementById("auth-bar");
+      if(ab)ab.style.display="flex";
+      return;
+    }
     STATE.meetings=meetings;
     sel.innerHTML='<option value="">— Select Grand Prix —</option>';
     meetings.forEach(m=>{
@@ -997,6 +1168,8 @@ async function selectSession(sess){
   STATE.scatterCoord=null;
   STATE.selectedLongRuns=new Set();
   STATE.multiDrivers=new Set();
+  STATE.rdLapMin=1;STATE.rdLapMax=null;STATE.rdRangeManual=false;STATE.rpdStint="all";
+  _pitStopsData=null;_psView="all";_psSortCol="lap";_psSortAsc=true;_psStintFilter="all";_psGroupBy="driver";_psEnriched=null;
   stopLiveRefresh();
   const main=document.getElementById("main-area");
   main.innerHTML='<div class="loading"><div class="spinner"></div>Loading session data...</div>';
@@ -1009,6 +1182,10 @@ async function selectSession(sess){
     renderSessionView();
     // Auto-save results to historical CSV in background
     saveSessionToHistory().catch(()=>{});
+    // Auto-start live refresh for race/sprint sessions
+    if(STATE.sessionType==="race"||STATE.sessionType==="sprint"){
+      startLiveRefresh();
+    }
   }catch(e){main.innerHTML=`<div class="empty-state">Failed: ${esc(e.message)}</div>`;}
 }
 
@@ -1169,6 +1346,8 @@ async function saveSessionToHistory(){
 function renderSessionView(){
   const d=STATE.sessionData;
   if(!d)return;
+  // Fill in missing driver info from fallback map
+  if(d.drivers)_fillMissingDrivers(d.drivers);
   const drivers=d.drivers||{};
   const laps=d.laps||[];
   const stints=d.stints||[];
@@ -1271,16 +1450,156 @@ function renderSessionView(){
             <button class="rd-strategy-tab active" onclick="setRdStrategyMode('stints')">&#127937; Tyre Strategy</button>
             <button class="rd-strategy-tab" onclick="setRdStrategyMode('position')">&#128200; Position Chart</button>
             <button class="rd-strategy-tab" onclick="setRdStrategyMode('pits')">&#128260; Pit Analysis</button>
+            <button class="rd-strategy-tab" onclick="setRdStrategyMode('fuel')">&#9981; Fuel-Corrected Pace</button>
           </div>
           <div class="rd-strategy-body">
             <canvas id="rd-strategy-canvas" class="rd-strategy-canvas" height="200"></canvas>
             <div id="rd-position-chart" style="display:none"><canvas id="rd-pos-canvas" class="pos-chart-canvas" height="400"></canvas><div class="pos-chart-legend" id="pos-chart-legend"></div></div>
             <div id="rd-pit-analysis" style="display:none;max-height:500px;overflow-y:auto;scrollbar-width:thin"></div>
+            <div id="rd-fuel-corrected" style="display:none;max-height:500px;overflow-y:auto;scrollbar-width:thin"></div>
           </div>
         </div>
         <div class="rd-table-wrap" id="rd-table-wrap">
           <div style="padding:16px;color:var(--text2);font-size:12px">Loading race data…</div>
         </div>
+      </div>
+    </div>`:""}
+
+    <!-- Race Pace Distribution: Box/Whisker & Violin (race/sprint only) -->
+    ${isRace?`
+    <div class="panel" id="rpd-panel">
+      <div class="panel-header" onclick="togglePanel('rpd-panel')">
+        <span class="panel-title">&#128202; Race Pace Distribution &mdash; Box/Whisker &amp; Violin</span>
+        <span class="panel-toggle">&#9660;</span>
+      </div>
+      <div class="panel-body" style="padding:12px 14px">
+        <div style="font-size:10px;color:var(--text2);margin-bottom:8px">Pilot basina temiz yaris tur surelerinin istatistiksel dagilimi. Ham ve yakit-duzeltmeli gorunumler arasinda gecis yapin. Aykiri degerler (&gt;%107 medyan) ve pit-cikis turlari haric tutulur.</div>
+        <div class="rpd-panel-toolbar">
+          <span style="font-size:10px;color:var(--text2);font-weight:700">Mod:</span>
+          <button class="rpd-toggle active" id="rpd-mode-raw" onclick="setRpdMode('raw')">Ham Tempo</button>
+          <button class="rpd-toggle" id="rpd-mode-fc" onclick="setRpdMode('fc')">Yakit-Duzeltmeli</button>
+          <span style="width:1px;height:14px;background:var(--border);margin:0 4px;flex-shrink:0"></span>
+          <span style="font-size:10px;color:var(--text2);font-weight:700">Grafik:</span>
+          <button class="rpd-toggle active" id="rpd-chart-box" onclick="setRpdChart('box')">&#128230; Box/Whisker</button>
+          <button class="rpd-toggle" id="rpd-chart-violin" onclick="setRpdChart('violin')">&#127931; Violin</button>
+          <button class="rpd-toggle" id="rpd-chart-both" onclick="setRpdChart('both')">Ikisi</button>
+          <button class="ctrl-btn" onclick="openRacePaceAI()" style="margin-left:auto;background:linear-gradient(135deg,#8b5cf6,#3b82f6);color:#fff;border-color:transparent;font-size:10px;padding:4px 12px">&#129302; AI Yaris Temposu Analizi</button>
+        </div>
+        <div class="rpd-panel-toolbar" id="rpd-stint-row" style="margin-top:4px">
+          <span style="font-size:10px;color:var(--text2);font-weight:700">Stint:</span>
+          <span id="rpd-stint-btns"></span>
+        </div>
+        <div class="rpd-chart-row" id="rpd-chart-row">
+          <div class="rpd-chart-box" id="rpd-box-wrap">
+            <div class="chart-label">&#128230; Box &amp; Whisker &mdash; <span id="rpd-box-label">Ham Tempo</span></div>
+            <canvas id="rpd-box-canvas" height="320" style="cursor:crosshair"></canvas>
+            <div class="rpd-tooltip" id="rpd-box-tooltip"></div>
+          </div>
+          <div class="rpd-chart-box" id="rpd-violin-wrap" style="display:none">
+            <div class="chart-label">&#127931; Violin Plot &mdash; <span id="rpd-violin-label">Ham Tempo</span></div>
+            <canvas id="rpd-violin-canvas" height="320" style="cursor:crosshair"></canvas>
+            <div class="rpd-tooltip" id="rpd-violin-tooltip"></div>
+          </div>
+        </div>
+        <div class="rpd-pinned-wrap" id="rpd-pinned-wrap"></div>
+        <details class="rpd-guide-box">
+          <summary>&#128218; Grafik Yorumlama Kilavuzu &mdash; Box/Whisker &amp; Violin</summary>
+          <p style="margin:6px 0 4px"><strong>Box &amp; Whisker (Kutu Grafigi):</strong></p>
+          <div class="guide-legend">
+            <span class="guide-item"><span class="guide-swatch" style="background:#fff;height:2px"></span> <strong>Beyaz cizgi</strong> = Medyan (ortanca tur suresi)</span>
+            <span class="guide-item"><span class="guide-swatch" style="background:rgba(100,100,255,.4);height:8px;border:1px solid rgba(100,100,255,.8)"></span> <strong>Kutu</strong> = Q1&ndash;Q3 arasi (%25&ndash;%75)</span>
+            <span class="guide-item"><span class="guide-swatch" style="background:rgba(100,100,255,.8);width:6px;height:6px;border-radius:50%"></span> <strong>Baklavaci</strong> = Ortalama</span>
+            <span class="guide-item"><span class="guide-swatch" style="background:rgba(100,100,255,.5);width:4px;height:4px;border-radius:50%"></span> <strong>Noktalar</strong> = Aykiri degerler</span>
+          </div>
+          <ul style="margin:4px 0 4px 16px;list-style:disc;font-size:10px">
+            <li><strong>Dar kutu (kucuk IQR)</strong> = Tutarli pilot, turlar arasi az fark</li>
+            <li><strong>Genis kutu</strong> = Dengesiz performans, buyuk varyans</li>
+            <li><strong>Medyan vs Ortalama farki</strong> = Carpik dagilim (aykiri turlar ortalamyi cekiyor)</li>
+            <li><strong>Cok sayida aykiri nokta</strong> = Trafik, hata veya strateji kaynakli anormal turlar</li>
+          </ul>
+          <p style="margin:8px 0 4px"><strong>Violin Plot (Keman Grafigi):</strong></p>
+          <ul style="margin:4px 0 4px 16px;list-style:disc;font-size:10px">
+            <li><strong>Genis bolge</strong> = Bu tur suresi araliginda cok sayida tur yapilmis (yogunluk yuksek)</li>
+            <li><strong>Dar bolge</strong> = Az sayida tur bu araliktaymis</li>
+            <li><strong>Cift tepe (bimodal)</strong> = Farkli stint/lastik performanslari veya yaris ici degisim</li>
+            <li><strong>Tek sivri tepe</strong> = Cok tutarli, hep ayni tempoda gitmis</li>
+            <li><strong>Bireysel noktalar</strong> = Her bir tur suresi (jitter ile dagitilmis)</li>
+          </ul>
+          <p style="margin:6px 0;font-style:italic;font-size:9px">Ipucu: Pilota tiklayin &rarr; istatistikler grafigin altina sabitlenir (YouTube yayini icin PNG-uyumlu gorunum).</p>
+        </details>
+        <details class="rpd-methodology">
+          <summary>&#9981; Fuel-Correction Methodology &amp; 2026 Regulation Note</summary>
+          <p style="margin:6px 0 4px"><strong>What is fuel correction?</strong><br>
+          During a race, cars burn fuel every lap, becoming lighter and inherently faster. To compare true pace across different race phases, we normalize lap times to a reference fuel load (mid-race).</p>
+          <p style="margin:4px 0"><strong>Formula:</strong> <code>corrected = lapTime &minus; FUEL_EFFECT &times; (lapNumber &minus; midRaceLap)</code></p>
+          <p style="margin:4px 0"><strong>Default FUEL_EFFECT:</strong> <code>0.10 s/lap</code> &mdash; this represents ~3.0&ndash;3.2 kg of fuel burned per lap at ~0.030&ndash;0.035 s/kg. The car gets lighter each lap, so early-race laps are penalized and late-race laps are credited.</p>
+          <p style="margin:4px 0"><strong>Data cleaning:</strong> Pit-out laps excluded, outliers &gt;107% of stint median removed, minimum 3 clean laps per stint required.</p>
+          <p style="margin:8px 0 4px" class="warn">&#9888; 2026 Regulation Considerations:</p>
+          <p style="margin:2px 0">The 2026 F1 regulations introduce a <strong>new power unit architecture</strong> (350kW MGU-K, no MGU-H, active aero) and a <strong>smaller fuel tank</strong> (~70 kg vs ~110 kg pre-2026). This significantly affects fuel correction:</p>
+          <ul style="margin:4px 0 4px 16px;list-style:disc">
+            <li><strong>Lower fuel load</strong> &rarr; smaller total fuel-effect window across the race</li>
+            <li><strong>Different fuel consumption rate</strong> &rarr; the 0.10 s/lap default may need adjustment (possibly 0.06&ndash;0.08 s/lap for 2026+)</li>
+            <li><strong>Active aero</strong> drag changes may partially offset or amplify the fuel mass effect</li>
+            <li><strong>Battery weight is constant</strong> &mdash; the heavier MGU-K battery doesn't burn off, so a larger percentage of car mass is fixed</li>
+            <li>Until real 2026 data establishes empirical fuel effects, treat FC values as <em>approximate</em> and compare within-session (relative deltas remain valid)</li>
+          </ul>
+          <p style="margin:4px 0;font-style:italic">For pre-2026 seasons, the 0.10 s/lap assumption is well-established across most circuits (range: 0.07&ndash;0.12 s/lap depending on track).</p>
+        </details>
+      </div>
+    </div>`:""}
+
+    <!-- Pit Stops Timing (race/sprint only) -->
+    ${isRace?`
+    <div class="panel" id="pitstops-panel">
+      <div class="panel-header" onclick="togglePanel('pitstops-panel')">
+        <span class="panel-title">&#9201; Pit Stop Times <span id="ps-count" style="font-weight:400;font-size:10px;color:var(--text2)"></span></span>
+        <span class="panel-toggle">▼</span>
+      </div>
+      <div class="panel-body" style="padding:12px 14px">
+        <div style="font-size:10px;color:var(--text2);margin-bottom:8px">Stationary time (wheel change) and total pit lane duration for every pit stop. Click column headers to sort.</div>
+        <div class="ps-summary" id="ps-summary"></div>
+        <div class="ps-view-toggle" id="ps-view-toggle">
+          <button class="ps-view-btn active" onclick="setPsView('all')">All Stops</button>
+          <button class="ps-view-btn" onclick="setPsView('bydriver')">By Driver</button>
+          <button class="ps-view-btn" onclick="setPsView('box')">Box Plot</button>
+          <button class="ps-view-btn" onclick="setPsView('violin')">Violin</button>
+        </div>
+        <div id="ps-stint-filter" style="display:none;align-items:center;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+          <span style="font-size:10px;color:var(--text2);margin-right:6px;font-weight:700">STINT FILTER:</span>
+          <span id="ps-stint-btns"></span>
+          <span style="margin-left:12px;font-size:10px;color:var(--text2);font-weight:700">GROUP BY:</span>
+          <span id="ps-group-btns" style="margin-left:4px">
+            <button class="ps-view-btn active" style="font-size:9px;padding:2px 8px" onclick="setPsGroupBy('driver')">Driver</button>
+            <button class="ps-view-btn" style="font-size:9px;padding:2px 8px" onclick="setPsGroupBy('compound')">Compound</button>
+            <button class="ps-view-btn" style="font-size:9px;padding:2px 8px" onclick="setPsGroupBy('stint')">Stint #</button>
+          </span>
+        </div>
+        <div class="ps-chart-wrap">
+          <canvas id="ps-chart-canvas" height="220"></canvas>
+        </div>
+        <div class="ps-chart-wrap" id="ps-dist-chart-wrap" style="display:none">
+          <canvas id="ps-dist-canvas" height="340"></canvas>
+        </div>
+        <div class="table-scroll" style="max-height:500px" id="ps-table-wrap"></div>
+      </div>
+    </div>`:""}
+
+    <!-- Scenario Analysis (race/sprint only) -->
+    ${isRace?`
+    <div class="panel" id="scenario-panel">
+      <div class="panel-header" onclick="togglePanel('scenario-panel')">
+        <span class="panel-title">&#127912; Senaryo Analizi &mdash; &ldquo;Ya ... olsaydi?&rdquo;</span>
+        <span class="panel-toggle">&#9660;</span>
+      </div>
+      <div class="panel-body" style="padding:14px">
+        <p style="font-size:11px;color:var(--text2);margin:0 0 10px">Yaris hakkinda alternatif senaryo sorulari sorun. Claude AI, yaris verilerini (SC/VSC pencereleri, pit stoplari, pozisyonlar, tur sureleri, lastik stratejileri) kullanarak analiz yapar.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px" id="scenario-suggestions"></div>
+        <div style="display:flex;gap:8px;align-items:flex-start">
+          <textarea id="scenario-question" rows="3" placeholder="Ornek: Ferrari SC/VSC penceresinde en az bir aracini pite alsaydi, sonuc nasil degisirdi?" style="flex:1;padding:8px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;resize:vertical;font-family:inherit"></textarea>
+          <button class="ctrl-btn" onclick="runScenarioAnalysis()" style="background:var(--purple);color:#fff;border-color:var(--purple);padding:8px 16px;font-weight:700;white-space:nowrap" id="scenario-run-btn">&#129302; Analiz Et</button>
+        </div>
+        <div id="scenario-result" style="margin-top:12px"></div>
+        <div id="scenario-history" style="margin-top:12px"></div>
       </div>
     </div>`:""}
 
@@ -1432,6 +1751,31 @@ function renderSessionView(){
           <div id="driving-phases-wrap" style="min-height:60px"></div>
         </div>
       </div>
+      <!-- Speed Heatmap (Top Speed per Driver per Lap) -->
+      <div class="chart-row">
+        <div class="chart-box full" style="min-width:0">
+          <div class="chart-label">&#128293; Top Speed Heatmap &mdash; Lap-by-Lap</div>
+          <div style="font-size:10px;color:var(--text2);margin-bottom:6px">
+            Her tur icin pilotlarin maksimum hizlari (km/h). Renk skalasi: <span style="color:#3b0764;background:#fae8ff;padding:0 4px;border-radius:2px;font-weight:700">dusuk</span> &rarr; <span style="color:#fff;background:#c2410c;padding:0 4px;border-radius:2px;font-weight:700">yuksek</span>.
+            En sagdaki sutun tur ortalamasi. Pilotlar max hiza gore siralanir.
+            <span style="margin-left:4px;font-size:9px;color:var(--text2)">Kaynak: Speed Trap (ST), I1, I2 &mdash; en yuksek deger</span>
+            <select id="heatmap-speed-src" onchange="loadSpeedHeatmap()" style="margin-left:8px;font-size:10px;padding:1px 4px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:4px">
+              <option value="max">Max (ST/I1/I2)</option>
+              <option value="st">Speed Trap</option>
+              <option value="i1">Intermediate 1</option>
+              <option value="i2">Intermediate 2</option>
+              <option value="telemetry">&#127919; Telemetry (Full Circuit)</option>
+            </select>
+            <select id="heatmap-lap-count" onchange="loadSpeedHeatmap()" style="margin-left:4px;font-size:10px;padding:1px 4px;background:var(--surface2);color:var(--text);border:1px solid var(--border);border-radius:4px">
+              <option value="15">En hizli 15 tur</option>
+              <option value="10">En hizli 10 tur</option>
+              <option value="20">En hizli 20 tur</option>
+              <option value="0">Tum turlar</option>
+            </select>
+          </div>
+          <div id="speed-heatmap-wrap" style="overflow-x:auto;max-width:100%"></div>
+        </div>
+      </div>
     </div>
 
     <!-- Multi-Driver Lap-by-Lap Analysis -->
@@ -1538,10 +1882,11 @@ function renderSessionView(){
   drawLapScatter();
   renderSpeedRankings();
   drawTopVsMean();
+  renderSpeedHeatmap();
   renderMultiDriverChips();
   drawMultiDriverChart();
   renderLongRuns();
-  if(isRace)renderRaceDashboard();
+  if(isRace){renderRaceDashboard();drawRacePaceDistribution();buildScenarioSuggestions();loadPitStops();}
   initScatterEvents();
   initTvmEvents();
   initMdClickExclude();
@@ -1570,12 +1915,14 @@ function onRdRangeChange(){
   let lo=parseInt(mn.value),hi=parseInt(mx.value);
   if(lo>hi){const t=lo;lo=hi;hi=t;mn.value=lo;mx.value=hi;}
   STATE.rdLapMin=lo;STATE.rdLapMax=hi;
+  STATE.rdRangeManual=true; // user manually adjusted
   const lbl=document.getElementById("rd-range-label");
   if(lbl)lbl.textContent=`${lo} – ${hi}`;
   renderRaceDashboard();
 }
 function resetRdRange(){
   STATE.rdLapMin=1;STATE.rdLapMax=null;
+  STATE.rdRangeManual=false; // back to auto-follow mode
   renderRaceDashboard();
 }
 function toggleRdStrategy(){
@@ -1590,19 +1937,22 @@ function toggleRdStrategy(){
 
 function setRdStrategyMode(mode){
   STATE.rdStrategyMode=mode;
-  const tabMap={stints:"Tyre",position:"Position",pits:"Pit"};
+  const tabMap={stints:"Tyre",position:"Position",pits:"Pit",fuel:"Fuel"};
   document.querySelectorAll(".rd-strategy-tab").forEach(b=>{
     b.classList.toggle("active",b.textContent.includes(tabMap[mode]||""));
   });
   const cv=document.getElementById("rd-strategy-canvas");
   const pc=document.getElementById("rd-position-chart");
   const pa=document.getElementById("rd-pit-analysis");
+  const fc=document.getElementById("rd-fuel-corrected");
   if(cv)cv.style.display=mode==="stints"?"block":"none";
   if(pc)pc.style.display=mode==="position"?"block":"none";
   if(pa)pa.style.display=mode==="pits"?"block":"none";
+  if(fc)fc.style.display=mode==="fuel"?"block":"none";
   if(mode==="stints")drawRdStrategy();
   else if(mode==="position")drawRdPositionChart();
-  else drawRdPitAnalysis();
+  else if(mode==="pits")drawRdPitAnalysis();
+  else if(mode==="fuel")drawRdFuelCorrected();
 }
 
 function _resolveCSS(varName){
@@ -1741,12 +2091,14 @@ function drawRdStrategy(canvasId){
         ctx.restore();
       }
 
-      // Pit stop marker at stint boundary (white dashed line)
+      // Pit stop marker at stint boundary (solid line + lap number)
       if(st.stint_number>1){
-        ctx.strokeStyle="rgba(255,255,255,.7)";ctx.lineWidth=1.5;
-        ctx.setLineDash([2,2]);
-        ctx.beginPath();ctx.moveTo(x1,y);ctx.lineTo(x1,y+rowH);ctx.stroke();
-        ctx.setLineDash([]);
+        ctx.strokeStyle="rgba(255,255,255,.85)";ctx.lineWidth=2;
+        ctx.beginPath();ctx.moveTo(x1,y+1);ctx.lineTo(x1,y+rowH-1);ctx.stroke();
+        // Pit lap number label above the boundary
+        ctx.fillStyle="#fff";ctx.font="bold 7px system-ui";ctx.textAlign="center";
+        ctx.fillStyle="rgba(255,255,255,.9)";
+        ctx.fillText("L"+ls,x1,y+1);
       }
 
       // Labels inside bar
@@ -1754,12 +2106,16 @@ function drawRdStrategy(canvasId){
       if(barW>18){
         // Compound letter
         ctx.fillStyle="#fff";ctx.font="bold 9px system-ui";ctx.textAlign="center";
-        ctx.fillText(comp[0],cx,barY+barH*0.55);
+        ctx.fillText(comp[0],cx,barY+barH*0.45);
       }
-      if(barW>42){
-        // Lap count
-        ctx.fillStyle="rgba(255,255,255,.8)";ctx.font="8px system-ui";
-        ctx.fillText(lapCount+"L",cx,barY+barH*0.55+9);
+      if(barW>60){
+        // Lap range: "L1–L17"
+        ctx.fillStyle="rgba(255,255,255,.85)";ctx.font="bold 7px system-ui";ctx.textAlign="center";
+        ctx.fillText("L"+ls+"–L"+le,cx,barY+barH*0.45+10);
+      }else if(barW>35){
+        // Lap count when bar is narrow
+        ctx.fillStyle="rgba(255,255,255,.8)";ctx.font="7px system-ui";ctx.textAlign="center";
+        ctx.fillText(lapCount+"L",cx,barY+barH*0.45+10);
       }
       // Fresh/Used badge — right side of bar
       if(barW>28){
@@ -2137,34 +2493,76 @@ function drawRdPositionChart(){
 /* ── Pit Stops & Position Change Analysis ── */
 function _buildPositionTimeline(){
   const d=STATE.sessionData;if(!d)return{};
-  const allLaps=(d.laps||[]).filter(l=>l.lap_duration>0);
+  const lapsRaw=d.laps||[];
+  const allLaps=lapsRaw.filter(l=>l.lap_duration>0);
   if(!allLaps.length)return{};
   const maxLap=Math.max(...allLaps.map(l=>l.lap_number));
+  const positions=d.positions||[];
 
-  // posAt[lap] = { dn: position, ... }  — full standings per lap
   const posAt={};
-  // Try position field from lap data first
-  let hasPositionField=false;
-  allLaps.forEach(l=>{if(l.position)hasPositionField=true;});
 
-  if(hasPositionField){
+  if(positions.length>0){
+    // ── Use dedicated positions API data (accurate real-time positions) ──
+    // Build per-driver sorted position timeline: [{t, pos}]
+    const drvPos={};
+    positions.forEach(p=>{
+      if(p.position==null||p.driver_number==null||!p.date)return;
+      const dn=p.driver_number;
+      if(!drvPos[dn])drvPos[dn]=[];
+      drvPos[dn].push({t:new Date(p.date).getTime(),pos:p.position});
+    });
+    Object.values(drvPos).forEach(a=>a.sort((x,y)=>x.t-y.t));
+
+    // Build per-driver lap end timestamps from ALL laps (including duration=0)
+    const lapEnd={}; // dn -> {lapNum: endMs}
+    lapsRaw.forEach(l=>{
+      if(!l.date_start||!l.driver_number||!l.lap_number)return;
+      const dn=l.driver_number;
+      if(!lapEnd[dn])lapEnd[dn]={};
+      const startMs=new Date(l.date_start).getTime();
+      const durMs=(l.lap_duration||0)*1000;
+      lapEnd[dn][l.lap_number]=startMs+durMs;
+    });
+
+    // Binary search: latest position entry with t <= target
+    function lastPosBefore(timeline,target){
+      if(!timeline||!timeline.length)return null;
+      let lo=0,hi=timeline.length-1,best=-1;
+      while(lo<=hi){
+        const mid=(lo+hi)>>1;
+        if(timeline[mid].t<=target){best=mid;lo=mid+1;}
+        else hi=mid-1;
+      }
+      return best>=0?timeline[best].pos:null;
+    }
+
+    const allDrv=new Set(Object.keys(drvPos).map(Number));
+
     for(let lap=1;lap<=maxLap;lap++){
       posAt[lap]={};
-      allLaps.filter(l=>l.lap_number===lap&&l.position).forEach(l=>{posAt[lap][l.driver_number]=l.position;});
-      // Carry forward from previous lap for drivers who didn't record this lap
+      allDrv.forEach(dn=>{
+        const endT=lapEnd[dn]&&lapEnd[dn][lap];
+        if(endT){
+          const p=lastPosBefore(drvPos[dn],endT);
+          if(p!=null)posAt[lap][dn]=p;
+        }
+      });
+      // Carry forward from previous lap for drivers without data this lap
       if(lap>1&&posAt[lap-1]){
-        Object.entries(posAt[lap-1]).forEach(([dn,p])=>{if(posAt[lap][dn]==null)posAt[lap][dn]=p;});
+        Object.entries(posAt[lap-1]).forEach(([dn,p])=>{
+          dn=parseInt(dn);
+          if(posAt[lap][dn]==null)posAt[lap][dn]=p;
+        });
       }
     }
   }else{
-    // Compute from cumulative time
+    // ── Fallback: compute from cumulative time ──
     const running={};
     for(let lap=1;lap<=maxLap;lap++){
       allLaps.filter(l=>l.lap_number===lap).forEach(l=>{
         running[l.driver_number]=(running[l.driver_number]||0)+l.lap_duration;
       });
       const entries=Object.entries(running).map(([dn,t])=>({dn:parseInt(dn),t}));
-      // Weight: more laps completed = better position; then faster cumulative
       const lapsDone={};
       allLaps.filter(l=>l.lap_number<=lap).forEach(l=>{lapsDone[l.driver_number]=(lapsDone[l.driver_number]||0)+1;});
       entries.sort((a,b)=>{
@@ -2415,6 +2813,1967 @@ function drawRdPitAnalysis(){
   el.innerHTML=html;
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   PIT STOP TIMES — stationary + total pit lane duration from OpenF1 /pit
+   ══════════════════════════════════════════════════════════════════════════════ */
+let _pitStopsData=null;
+let _psView="all";
+let _psSortCol="lap";
+let _psSortAsc=true;
+let _psStintFilter="all";
+let _psGroupBy="driver";
+let _psEnriched=null;
+
+function setPsView(v){
+  _psView=v;
+  const viewBtns=document.getElementById("ps-view-toggle");
+  if(viewBtns)viewBtns.querySelectorAll(".ps-view-btn").forEach(b=>{
+    const t=b.textContent.trim().toLowerCase();
+    b.classList.toggle("active",
+      (v==="all"&&t==="all stops")||(v==="bydriver"&&t==="by driver")||
+      (v==="box"&&t==="box plot")||(v==="violin"&&t==="violin"));
+  });
+  const isChart=(v==="box"||v==="violin");
+  const stintEl=document.getElementById("ps-stint-filter");
+  const barChartEl=document.querySelector("#ps-chart-canvas");
+  const distEl=document.getElementById("ps-dist-chart-wrap");
+  const tableEl=document.getElementById("ps-table-wrap");
+  if(stintEl)stintEl.style.display=isChart?"flex":"none";
+  if(barChartEl)barChartEl.parentElement.style.display=isChart?"none":"block";
+  if(distEl)distEl.style.display=isChart?"block":"none";
+  if(tableEl)tableEl.style.display=isChart?"none":"block";
+  if(isChart){_drawPsDistChart();}
+  else{_renderPsTable();_drawPsChart();}
+}
+function setPsSort(col){
+  if(_psSortCol===col)_psSortAsc=!_psSortAsc;
+  else{_psSortCol=col;_psSortAsc=true;}
+  _renderPsTable();
+}
+function setPsStintFilter(v){
+  _psStintFilter=v;
+  const btns=document.getElementById("ps-stint-btns");
+  if(btns)btns.querySelectorAll(".ps-view-btn").forEach(b=>b.classList.toggle("active",b.dataset.stint===v));
+  _drawPsDistChart();
+}
+function setPsGroupBy(v){
+  _psGroupBy=v;
+  const btns=document.getElementById("ps-group-btns");
+  if(btns)btns.querySelectorAll(".ps-view-btn").forEach(b=>b.classList.toggle("active",b.textContent.trim().toLowerCase().startsWith(v)));
+  _drawPsDistChart();
+}
+
+async function loadPitStops(){
+  if(!STATE.activeSession)return;
+  const sk=STATE.activeSession.session_key;
+  try{
+    const r=await fetch(`/api/season/pit_stops?session_key=${sk}`);
+    const data=await r.json();
+    _pitStopsData=Array.isArray(data)?data:[];
+  }catch(e){_pitStopsData=[];console.warn("Pit stops fetch failed:",e);}
+  renderPitStops();
+}
+
+function _psSd(p){return(p.stop_duration!=null&&p.stop_duration>0)?p.stop_duration:0;}
+function _psLd(p){return(p.pit_duration!=null&&p.pit_duration>0)?p.pit_duration:((p.lane_duration!=null&&p.lane_duration>0)?p.lane_duration:0);}
+function _psMetric(p){return _psHasStopData?_psSd(p):_psLd(p);}
+let _psHasStopData=false;
+
+function _buildPsEnriched(){
+  const pits=_pitStopsData||[];
+  const drivers=(STATE.sessionData||{}).drivers||{};
+  const stints=(STATE.sessionData||{}).stints||[];
+  _psHasStopData=pits.some(p=>_psSd(p)>0);
+
+  const stopCount={};
+  _psEnriched=pits.map(p=>{
+    const dn=p.driver_number;
+    const drv=drivers[dn]||{};
+    stopCount[dn]=(stopCount[dn]||0)+1;
+    const sNum=stopCount[dn];
+
+    // Find compound fitted (stint starting after pit)
+    let compIn="?",compOut="?";
+    const dStints=(stints||[]).filter(s=>s.driver_number===dn);
+    dStints.sort((a,b)=>(a.lap_start||0)-(b.lap_start||0));
+    for(const st of dStints){
+      if(st.lap_start!=null&&st.lap_start>=p.lap_number&&st.lap_start<=p.lap_number+1){
+        compIn=(st.compound||"?").toUpperCase();
+        break;
+      }
+    }
+    // Find compound removed (stint ending at pit lap)
+    for(let i=dStints.length-1;i>=0;i--){
+      const st=dStints[i];
+      if(st.lap_end!=null&&st.lap_end>=p.lap_number-1&&st.lap_end<=p.lap_number){
+        compOut=(st.compound||"?").toUpperCase();
+        break;
+      }
+    }
+
+    return{...p,drv,stopNum:sNum,compIn,compOut,_sd:_psSd(p),_ld:_psLd(p),_m:_psHasStopData?_psSd(p):_psLd(p)};
+  });
+}
+
+function renderPitStops(){
+  const countEl=document.getElementById("ps-count");
+  const summEl=document.getElementById("ps-summary");
+  const tableEl=document.getElementById("ps-table-wrap");
+  if(!countEl||!summEl||!tableEl)return;
+
+  const pits=_pitStopsData||[];
+  if(!pits.length){
+    countEl.textContent="(0)";
+    summEl.innerHTML="";
+    tableEl.innerHTML='<div style="padding:16px;color:var(--text2);font-size:12px">No pit stop data available yet.</div>';
+    _psEnriched=null;
+    return;
+  }
+
+  _buildPsEnriched();
+  countEl.textContent=`(${pits.length} stops)`;
+
+  // Summary stats
+  const normal=pits.filter(p=>_psLd(p)>0&&_psLd(p)<60);
+  const stopTimes=normal.filter(p=>_psSd(p)>0).map(p=>_psSd(p));
+  const laneTimes=normal.map(p=>_psLd(p)).filter(v=>v>0);
+
+  const avgStop=stopTimes.length?(stopTimes.reduce((a,b)=>a+b,0)/stopTimes.length):0;
+  const minStop=stopTimes.length?Math.min(...stopTimes):0;
+  const maxStop=stopTimes.length?Math.max(...stopTimes):0;
+  const avgLane=laneTimes.length?(laneTimes.reduce((a,b)=>a+b,0)/laneTimes.length):0;
+  const minLane=laneTimes.length?Math.min(...laneTimes):0;
+
+  let cards=`<div class="ps-summary-card"><div class="ps-label">Total Stops</div><div class="ps-val">${pits.length}</div></div>`;
+  if(_psHasStopData){
+    cards+=`<div class="ps-summary-card"><div class="ps-label">Fastest Stationary</div><div class="ps-val" style="color:var(--green)">${minStop.toFixed(1)}s</div></div>`;
+    cards+=`<div class="ps-summary-card"><div class="ps-label">Avg Stationary</div><div class="ps-val">${avgStop.toFixed(2)}s</div></div>`;
+    cards+=`<div class="ps-summary-card"><div class="ps-label">Slowest Stationary</div><div class="ps-val" style="color:var(--accent)">${maxStop.toFixed(1)}s</div></div>`;
+  }
+  cards+=`<div class="ps-summary-card"><div class="ps-label">Fastest Pit Lane</div><div class="ps-val" style="color:var(--blue)">${minLane.toFixed(1)}s</div></div>`;
+  cards+=`<div class="ps-summary-card"><div class="ps-label">Avg Pit Lane</div><div class="ps-val">${avgLane.toFixed(1)}s</div></div>`;
+  if(!_psHasStopData)cards+=`<div class="ps-summary-card" style="border-color:var(--yellow)"><div class="ps-label">Note</div><div class="ps-val" style="font-size:11px;color:var(--yellow)">Stationary times not available</div></div>`;
+  summEl.innerHTML=cards;
+
+  // Build stint filter buttons
+  const maxStopNum=_psEnriched.length?Math.max(..._psEnriched.map(p=>p.stopNum)):0;
+  const stintBtns=document.getElementById("ps-stint-btns");
+  if(stintBtns){
+    let bhtml=`<button class="ps-view-btn ${_psStintFilter==="all"?"active":""}" data-stint="all" style="font-size:9px;padding:2px 8px" onclick="setPsStintFilter('all')">All</button>`;
+    for(let i=1;i<=Math.min(maxStopNum,5);i++){
+      bhtml+=`<button class="ps-view-btn ${_psStintFilter===String(i)?"active":""}" data-stint="${i}" style="font-size:9px;padding:2px 8px" onclick="setPsStintFilter('${i}')">Stop ${i}</button>`;
+    }
+    stintBtns.innerHTML=bhtml;
+  }
+
+  if(_psView==="box"||_psView==="violin"){_drawPsDistChart();}
+  else{_renderPsTable();_drawPsChart();}
+}
+
+function _renderPsTable(){
+  const tableEl=document.getElementById("ps-table-wrap");
+  if(!tableEl)return;
+  const pits=_pitStopsData||[];
+  if(!pits.length){tableEl.innerHTML='<div style="padding:16px;color:var(--text2);font-size:12px">No pit stop data.</div>';return;}
+  const drivers=(STATE.sessionData||{}).drivers||{};
+  const stints=(STATE.sessionData||{}).stints||[];
+
+  // Helpers for null-safe access
+  const sd=p=>(p.stop_duration!=null&&p.stop_duration>0)?p.stop_duration:0;
+  const ld=p=>(p.pit_duration!=null&&p.pit_duration>0)?p.pit_duration:((p.lane_duration!=null&&p.lane_duration>0)?p.lane_duration:0);
+  const hasStopData=pits.some(p=>sd(p)>0);
+
+  // Enrich each stop with driver info and stop number
+  const stopCount={};
+  const enriched=pits.map(p=>{
+    const dn=p.driver_number;
+    const drv=drivers[dn]||{};
+    stopCount[dn]=(stopCount[dn]||0)+1;
+    let compIn="?";
+    const dStints=(stints||[]).filter(s=>s.driver_number===dn);
+    dStints.sort((a,b)=>(a.lap_start||0)-(b.lap_start||0));
+    for(const st of dStints){
+      if(st.lap_start!=null&&st.lap_start>=p.lap_number&&st.lap_start<=p.lap_number+1){
+        compIn=(st.compound||"?").toUpperCase();
+        break;
+      }
+    }
+    return{...p,drv,stopNum:stopCount[dn],compIn,_sd:sd(p),_ld:ld(p)};
+  });
+
+  // Normal stops only (exclude red flags / drive-throughs > 60s)
+  const normal=enriched.filter(p=>p._ld>0&&p._ld<60);
+  const globalMinStop=normal.filter(p=>p._sd>0).length?Math.min(...normal.filter(p=>p._sd>0).map(p=>p._sd)):0;
+  const globalMaxStop=normal.filter(p=>p._sd>0).length?Math.max(...normal.filter(p=>p._sd>0).map(p=>p._sd)):0;
+  const globalMinLane=normal.filter(p=>p._ld>0).length?Math.min(...normal.filter(p=>p._ld>0).map(p=>p._ld)):0;
+  const globalMaxLane=normal.filter(p=>p._ld>0).length?Math.max(...normal.filter(p=>p._ld>0).map(p=>p._ld)):0;
+
+  if(_psView==="bydriver"){
+    const byDriver={};
+    enriched.forEach(p=>{const dn=p.driver_number;if(!byDriver[dn])byDriver[dn]=[];byDriver[dn].push(p);});
+    const driverList=Object.entries(byDriver).map(([dn,stops])=>{
+      dn=parseInt(dn);const drv=drivers[dn]||{};
+      const normalStops=stops.filter(s=>s._ld>0&&s._ld<60);
+      const bestStop=normalStops.filter(s=>s._sd>0).length?Math.min(...normalStops.filter(s=>s._sd>0).map(s=>s._sd)):0;
+      const avgStop=normalStops.filter(s=>s._sd>0).length?(normalStops.filter(s=>s._sd>0).reduce((a,s)=>a+s._sd,0)/normalStops.filter(s=>s._sd>0).length):0;
+      const bestLane=normalStops.filter(s=>s._ld>0).length?Math.min(...normalStops.filter(s=>s._ld>0).map(s=>s._ld)):0;
+      const avgLane=normalStops.filter(s=>s._ld>0).length?(normalStops.filter(s=>s._ld>0).reduce((a,s)=>a+s._ld,0)/normalStops.filter(s=>s._ld>0).length):0;
+      return{dn,drv,stops,bestStop,avgStop,bestLane,avgLane};
+    });
+    // Sort by best lane time (always available) or best stop time
+    driverList.sort((a,b)=>hasStopData?(a.bestStop||999)-(b.bestStop||999):(a.bestLane||999)-(b.bestLane||999));
+
+    let html='<table class="ps-table"><thead><tr>';
+    html+='<th>Driver</th><th>Stops</th>';
+    if(hasStopData)html+='<th>Best Stationary</th><th>Avg Stationary</th>';
+    html+='<th>Best Pit Lane</th><th>Avg Pit Lane</th><th>Details</th>';
+    html+='</tr></thead><tbody>';
+
+    driverList.forEach(d=>{
+      const color=teamColor(d.drv.team||"");
+      const isBestStop=(hasStopData&&d.bestStop>0&&Math.abs(d.bestStop-globalMinStop)<0.01);
+      const isBestLane=(d.bestLane>0&&Math.abs(d.bestLane-globalMinLane)<0.01);
+      html+=`<tr>`;
+      html+=`<td><span class="ps-team-dot" style="background:${color}"></span><span style="color:${color};font-weight:700">${esc(d.drv.acronym||"#"+d.dn)}</span> <span style="color:var(--text2);font-size:10px">${esc(d.drv.team||"")}</span></td>`;
+      html+=`<td>${d.stops.length}</td>`;
+      if(hasStopData){
+        html+=`<td class="${isBestStop?"ps-fastest":""}">${d.bestStop>0?d.bestStop.toFixed(1)+"s":"—"}</td>`;
+        html+=`<td>${d.avgStop>0?d.avgStop.toFixed(2)+"s":"—"}</td>`;
+      }
+      html+=`<td class="${isBestLane?"ps-fastest":""}">${d.bestLane>0?d.bestLane.toFixed(1)+"s":"—"}</td>`;
+      html+=`<td>${d.avgLane>0?d.avgLane.toFixed(1)+"s":"—"}</td>`;
+      html+=`<td style="font-size:10px;color:var(--text2)">`;
+      d.stops.forEach((s,i)=>{
+        const compCol=resolveColor(compoundColor(s.compIn));
+        const timeLabel=s._sd>0?s._sd.toFixed(1)+"s":s._ld>0?s._ld.toFixed(1)+"s (lane)":"—";
+        const isLong=s._ld>=60;
+        html+=`L${s.lap_number}: ${isLong?'<span style="color:var(--yellow)">'+timeLabel+' ⚠</span>':timeLabel}`;
+        html+=` <span class="rd-compound" style="background:${compCol}"></span>${s.compIn}`;
+        if(i<d.stops.length-1)html+=` · `;
+      });
+      html+=`</td></tr>`;
+    });
+    html+='</tbody></table>';
+    tableEl.innerHTML=html;
+  }else{
+    let sorted=[...enriched];
+    sorted.sort((a,b)=>{
+      let va,vb;
+      switch(_psSortCol){
+        case"lap":va=a.lap_number||0;vb=b.lap_number||0;break;
+        case"driver":va=(a.drv.acronym||"").toLowerCase();vb=(b.drv.acronym||"").toLowerCase();break;
+        case"stop":va=a._sd||999;vb=b._sd||999;break;
+        case"lane":va=a._ld||999;vb=b._ld||999;break;
+        case"num":va=a.stopNum||0;vb=b.stopNum||0;break;
+        default:va=a.lap_number||0;vb=b.lap_number||0;
+      }
+      if(typeof va==="string")return _psSortAsc?va.localeCompare(vb):vb.localeCompare(va);
+      return _psSortAsc?va-vb:vb-va;
+    });
+
+    const arrow=_psSortAsc?"▲":"▼";
+    let html='<table class="ps-table"><thead><tr>';
+    html+=`<th class="${_psSortCol==="lap"?"ps-sorted":""}" onclick="setPsSort('lap')">Lap ${_psSortCol==="lap"?arrow:""}</th>`;
+    html+=`<th class="${_psSortCol==="driver"?"ps-sorted":""}" onclick="setPsSort('driver')">Driver ${_psSortCol==="driver"?arrow:""}</th>`;
+    html+=`<th>Team</th>`;
+    html+=`<th class="${_psSortCol==="num"?"ps-sorted":""}" onclick="setPsSort('num')">Stop # ${_psSortCol==="num"?arrow:""}</th>`;
+    if(hasStopData)html+=`<th class="${_psSortCol==="stop"?"ps-sorted":""}" onclick="setPsSort('stop')">Stationary ${_psSortCol==="stop"?arrow:""}</th>`;
+    html+=`<th class="${_psSortCol==="lane"?"ps-sorted":""}" onclick="setPsSort('lane')">Pit Lane ${_psSortCol==="lane"?arrow:""}</th>`;
+    html+=`<th>Tyre In</th>`;
+    html+='</tr></thead><tbody>';
+
+    sorted.forEach(p=>{
+      const color=teamColor(p.drv.team||"");
+      const isFastestStop=(hasStopData&&p._sd>0&&Math.abs(p._sd-globalMinStop)<0.01);
+      const isSlowestStop=(hasStopData&&p._sd>0&&Math.abs(p._sd-globalMaxStop)<0.01&&globalMaxStop!==globalMinStop);
+      const isFastLane=(p._ld>0&&Math.abs(p._ld-globalMinLane)<0.01);
+      const isLong=p._ld>=60;
+
+      // Bar metric: use stop_duration if available, otherwise pit_duration
+      const barVal=hasStopData?p._sd:p._ld;
+      const barMax=hasStopData?globalMaxStop:globalMaxLane;
+      const barPct=barVal>0&&barMax>0?Math.max(5,(barVal/barMax)*100):0;
+      const compCol=resolveColor(compoundColor(p.compIn));
+
+      html+=`<tr${isLong?' style="opacity:.5"':""}>`;
+      html+=`<td style="font-weight:700">L${p.lap_number||"?"}</td>`;
+      html+=`<td><span class="ps-team-dot" style="background:${color}"></span><span style="color:${color};font-weight:700">${esc(p.drv.acronym||"#"+p.driver_number)}</span></td>`;
+      html+=`<td style="color:var(--text2);font-size:10px">${esc(p.drv.team||"")}</td>`;
+      html+=`<td><span class="ps-stop-num">${p.stopNum}</span></td>`;
+      if(hasStopData){
+        html+=`<td><div class="ps-bar-cell"><span class="${isFastestStop?"ps-fastest":isSlowestStop?"ps-slowest":""}">${p._sd>0?p._sd.toFixed(1)+"s":"—"}</span>`;
+        html+=`<div class="ps-bar-bg"><div class="ps-bar" style="width:${barPct}%;background:${isFastestStop?"var(--green)":isSlowestStop?"var(--accent)":color}"></div></div></div></td>`;
+      }
+      // Pit lane with bar (when no stop data) or plain value
+      if(!hasStopData){
+        html+=`<td><div class="ps-bar-cell"><span class="${isFastLane?"ps-fastest":""}">${p._ld>0?p._ld.toFixed(1)+"s":"—"}${isLong?" ⚠":""}</span>`;
+        html+=`<div class="ps-bar-bg"><div class="ps-bar" style="width:${barPct}%;background:${isFastLane?"var(--green)":color}"></div></div></div></td>`;
+      }else{
+        html+=`<td class="${isFastLane?"ps-fastest":""}">${p._ld>0?p._ld.toFixed(1)+"s":"—"}${isLong?" ⚠":""}</td>`;
+      }
+      html+=`<td><span class="rd-compound" style="background:${compCol}"></span>${p.compIn}</td>`;
+      html+=`</tr>`;
+    });
+
+    html+='</tbody></table>';
+    tableEl.innerHTML=html;
+  }
+}
+
+function _drawPsChart(){
+  const cv=document.getElementById("ps-chart-canvas");
+  if(!cv)return;
+  const pits=_pitStopsData||[];
+  if(!pits.length){cv.height=0;return;}
+  const drivers=(STATE.sessionData||{}).drivers||{};
+
+  // Helpers
+  const sdv=p=>(p.stop_duration!=null&&p.stop_duration>0)?p.stop_duration:0;
+  const ldv=p=>(p.pit_duration!=null&&p.pit_duration>0)?p.pit_duration:((p.lane_duration!=null&&p.lane_duration>0)?p.lane_duration:0);
+  const hasStopData=pits.some(p=>sdv(p)>0);
+  // Use stop_duration if available, otherwise pit_duration (filtered <60s)
+  const metric=p=>hasStopData?sdv(p):ldv(p);
+  const metricLabel=hasStopData?"AVG STATIONARY TIME (s)":"AVG PIT LANE TIME (s)";
+
+  const ctx=cv.getContext("2d");
+  const dpr=window.devicePixelRatio||1;
+
+  // Group by driver
+  const byDriver={};
+  pits.forEach(p=>{const dn=p.driver_number;if(!byDriver[dn])byDriver[dn]=[];byDriver[dn].push(p);});
+
+  const driverStats=Object.entries(byDriver).map(([dn,stops])=>{
+    dn=parseInt(dn);
+    const drv=drivers[dn]||{};
+    // Filter normal stops (<60s lane time)
+    const normal=stops.filter(s=>ldv(s)>0&&ldv(s)<60);
+    const vals=normal.map(s=>metric(s)).filter(v=>v>0);
+    const avg=vals.length?(vals.reduce((a,b)=>a+b,0)/vals.length):0;
+    const best=vals.length?Math.min(...vals):0;
+    return{dn,drv,stops:normal,avg,best,count:normal.length,allVals:vals};
+  }).filter(d=>d.count>0);
+  driverStats.sort((a,b)=>a.avg-b.avg);
+
+  if(!driverStats.length){cv.style.height="40px";cv.width=1;cv.height=1;return;}
+
+  // Chart dimensions
+  const barH=18;const gap=6;const padL=60;const padR=80;const padT=30;const padB=10;
+  const chartH=padT+driverStats.length*(barH+gap)+padB;
+  cv.style.height=chartH+"px";
+  cv.width=cv.offsetWidth*dpr;
+  cv.height=chartH*dpr;
+  ctx.scale(dpr,dpr);
+  const W=cv.offsetWidth;
+
+  const textCol=_resolveCSS("--text");
+  const text2Col=_resolveCSS("--text2");
+  const borderCol=_resolveCSS("--border");
+  const greenCol=_resolveCSS("--green");
+
+  ctx.clearRect(0,0,W,chartH);
+
+  const allVals=driverStats.flatMap(d=>d.allVals);
+  const maxVal=Math.max(...allVals,3);
+  const minVal=Math.max(0,Math.min(...allVals)-0.5);
+  const chartW=W-padL-padR;
+  const scale=v=>padL+((v-minVal)/(maxVal-minVal+0.5))*chartW;
+
+  // Title
+  ctx.fillStyle=text2Col;ctx.font="bold 10px -apple-system,sans-serif";ctx.textAlign="left";
+  ctx.fillText(metricLabel,padL,14);
+
+  // Grid lines
+  const step=maxVal>10?2:maxVal>5?1:0.5;
+  for(let v=Math.ceil(minVal/step)*step;v<=maxVal+step;v+=step){
+    const x=scale(v);
+    if(x<padL||x>W-padR)continue;
+    ctx.strokeStyle=borderCol;ctx.lineWidth=0.5;
+    ctx.beginPath();ctx.moveTo(x,padT);ctx.lineTo(x,chartH-padB);ctx.stroke();
+    ctx.fillStyle=text2Col;ctx.font="9px -apple-system,sans-serif";ctx.textAlign="center";
+    ctx.fillText(v.toFixed(1),x,padT-4);
+  }
+
+  // Bars
+  driverStats.forEach((d,i)=>{
+    const y=padT+i*(barH+gap);
+    const color=teamColor(d.drv.team||"");
+
+    ctx.fillStyle=color;ctx.font="bold 11px -apple-system,sans-serif";ctx.textAlign="right";
+    ctx.fillText(d.drv.acronym||"#"+d.dn,padL-6,y+barH/2+4);
+
+    // Avg bar
+    const avgX=scale(d.avg);
+    const avgW=Math.max(2,avgX-padL);
+    ctx.fillStyle=color;ctx.globalAlpha=0.7;
+    ctx.beginPath();ctx.roundRect(padL,y,avgW,barH,3);ctx.fill();
+    ctx.globalAlpha=1;
+
+    // Best stop diamond
+    if(d.best>0){
+      const bestX=scale(d.best);
+      ctx.fillStyle=greenCol;
+      ctx.beginPath();
+      ctx.moveTo(bestX,y+barH/2-5);ctx.lineTo(bestX+4,y+barH/2);
+      ctx.lineTo(bestX,y+barH/2+5);ctx.lineTo(bestX-4,y+barH/2);
+      ctx.closePath();ctx.fill();
+    }
+
+    // Individual stop dots
+    d.allVals.forEach(v=>{
+      const sx=scale(v);
+      ctx.fillStyle=color;ctx.globalAlpha=0.9;
+      ctx.beginPath();ctx.arc(sx,y+barH/2,3,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=1;
+    });
+
+    // Value label
+    ctx.fillStyle=textCol;ctx.font="bold 10px -apple-system,sans-serif";ctx.textAlign="left";
+    ctx.fillText(`${d.avg.toFixed(2)}s (${d.count}×)`,padL+avgW+6,y+barH/2+4);
+  });
+
+  // Legend
+  ctx.fillStyle=text2Col;ctx.font="9px -apple-system,sans-serif";ctx.textAlign="right";
+  ctx.fillText("● individual stop   ◆ best stop   ▬ avg",W-10,14);
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   BOX-WHISKER & VIOLIN — pit stop distribution charts
+   ══════════════════════════════════════════════════════════════════════════════ */
+function _psQuartiles(arr){
+  if(!arr.length)return{min:0,q1:0,med:0,q3:0,max:0,mean:0};
+  const s=[...arr].sort((a,b)=>a-b);
+  const n=s.length;
+  const q=(p)=>{const i=p*(n-1);const lo=Math.floor(i);const hi=Math.ceil(i);return lo===hi?s[lo]:s[lo]*(hi-i)+s[hi]*(i-lo);};
+  return{min:s[0],q1:q(0.25),med:q(0.5),q3:q(0.75),max:s[n-1],mean:arr.reduce((a,b)=>a+b,0)/n};
+}
+function _psKde(arr,nBins,bw){
+  if(!arr.length)return[];
+  const s=[...arr].sort((a,b)=>a-b);
+  const lo=s[0],hi=s[s.length-1];
+  const range=hi-lo||1;
+  const step=range/(nBins-1);
+  const pts=[];
+  for(let i=0;i<nBins;i++){
+    const x=lo+i*step;
+    let density=0;
+    for(const v of s){const z=(x-v)/bw;density+=Math.exp(-0.5*z*z);}
+    density/=(s.length*bw*Math.sqrt(2*Math.PI));
+    pts.push({x,d:density});
+  }
+  return pts;
+}
+
+const _compoundColors={
+  SOFT:"#ff3333",MEDIUM:"#ffd700",HARD:"#e0e0e0",
+  INTERMEDIATE:"#22c55e",WET:"#3b82f6",
+  UNKNOWN:"#888",HYPERSOFT:"#ff69b4",ULTRASOFT:"#9b59b6",SUPERSOFT:"#e74c3c"
+};
+function _psCompCol(c){return _compoundColors[(c||"").toUpperCase()]||"#888";}
+
+function _drawPsDistChart(){
+  const cv=document.getElementById("ps-dist-canvas");
+  if(!cv)return;
+  const enriched=_psEnriched||[];
+  if(!enriched.length){cv.style.height="40px";return;}
+
+  // Filter by stint number & normal stops (<60s)
+  let filtered=enriched.filter(p=>p._ld>0&&p._ld<60&&p._m>0);
+  if(_psStintFilter!=="all"){
+    const sn=parseInt(_psStintFilter);
+    filtered=filtered.filter(p=>p.stopNum===sn);
+  }
+  if(!filtered.length){
+    const ctx2=cv.getContext("2d");ctx2.clearRect(0,0,cv.width,cv.height);
+    cv.style.height="60px";cv.width=cv.offsetWidth;cv.height=60;
+    ctx2.fillStyle=_resolveCSS("--text2");ctx2.font="12px -apple-system,sans-serif";ctx2.textAlign="center";
+    ctx2.fillText("No pit stop data for this filter.",cv.offsetWidth/2,35);
+    return;
+  }
+
+  // Group data
+  const groups=new Map();
+  const drivers=(STATE.sessionData||{}).drivers||{};
+  filtered.forEach(p=>{
+    let key,label,color;
+    if(_psGroupBy==="compound"){
+      key=p.compIn||"?";label=key;color=_psCompCol(key);
+    }else if(_psGroupBy==="stint"){
+      key="Stop "+p.stopNum;label=key;color=["#3b82f6","#f59e0b","#22c55e","#ef4444","#a855f7","#ec4899"][p.stopNum-1]||"#888";
+    }else{
+      // driver
+      key=String(p.driver_number);
+      const drv=drivers[p.driver_number]||{};
+      label=drv.acronym||"#"+p.driver_number;
+      color=teamColor(drv.team||"");
+    }
+    if(!groups.has(key))groups.set(key,{label,color,vals:[],compounds:[]});
+    const g=groups.get(key);
+    g.vals.push(p._m);
+    g.compounds.push(p.compIn);
+  });
+
+  // Sort groups
+  const gArr=[...groups.entries()].map(([k,g])=>({key:k,...g,stats:_psQuartiles(g.vals)}));
+  if(_psGroupBy==="driver")gArr.sort((a,b)=>a.stats.med-b.stats.med);
+  else if(_psGroupBy==="stint")gArr.sort((a,b)=>parseInt(a.key.replace(/\D/g,""))-parseInt(b.key.replace(/\D/g,"")));
+  else gArr.sort((a,b)=>a.stats.med-b.stats.med);
+
+  const isViolin=(_psView==="violin");
+  const ctx=cv.getContext("2d");
+  const dpr=window.devicePixelRatio||1;
+
+  // Layout
+  const padL=70,padR=30,padT=40,padB=50;
+  const itemW=isViolin?Math.min(80,Math.max(40,(cv.offsetWidth-padL-padR)/gArr.length)):Math.min(60,Math.max(30,(cv.offsetWidth-padL-padR)/gArr.length));
+  const chartW=gArr.length*itemW;
+  const totalW=padL+chartW+padR;
+  const chartH=280;
+  const totalH=padT+chartH+padB;
+
+  cv.style.height=totalH+"px";
+  cv.style.width="100%";
+  cv.width=Math.max(totalW,cv.offsetWidth)*dpr;
+  cv.height=totalH*dpr;
+  ctx.scale(dpr,dpr);
+  const W=Math.max(totalW,cv.offsetWidth);
+
+  const textCol=_resolveCSS("--text");
+  const text2Col=_resolveCSS("--text2");
+  const borderCol=_resolveCSS("--border");
+  const greenCol=_resolveCSS("--green");
+  const surfCol=_resolveCSS("--surface2");
+
+  ctx.clearRect(0,0,W,totalH);
+
+  // Y-scale based on all values
+  const allVals=gArr.flatMap(g=>g.vals);
+  const yMin=Math.max(0,Math.min(...allVals)-0.5);
+  const yMax=Math.max(...allVals)+0.5;
+  const yScale=v=>padT+chartH-(((v-yMin)/(yMax-yMin))*chartH);
+
+  // Title
+  const metricLabel=_psHasStopData?"STATIONARY TIME (s)":"PIT LANE TIME (s)";
+  ctx.fillStyle=text2Col;ctx.font="bold 10px -apple-system,sans-serif";ctx.textAlign="left";
+  ctx.fillText(metricLabel+(_psStintFilter!=="all"?` — Stop ${_psStintFilter} only`:" — All stops"),padL,16);
+
+  // Y-axis grid
+  const yStep=(yMax-yMin)>10?2:(yMax-yMin)>5?1:(yMax-yMin)>2?0.5:0.2;
+  for(let v=Math.ceil(yMin/yStep)*yStep;v<=yMax;v+=yStep){
+    const y=yScale(v);
+    if(y<padT||y>padT+chartH)continue;
+    ctx.strokeStyle=borderCol;ctx.lineWidth=0.5;
+    ctx.beginPath();ctx.moveTo(padL,y);ctx.lineTo(padL+chartW,y);ctx.stroke();
+    ctx.fillStyle=text2Col;ctx.font="9px -apple-system,sans-serif";ctx.textAlign="right";
+    ctx.fillText(v.toFixed(1),padL-6,y+3);
+  }
+
+  // Draw each group
+  gArr.forEach((g,i)=>{
+    const cx=padL+i*itemW+itemW/2;
+    const st=g.stats;
+
+    if(isViolin){
+      // Violin plot
+      const bw=(st.q3-st.q1)||0.3;
+      const kde=_psKde(g.vals,60,bw*0.4||0.15);
+      const maxD=Math.max(...kde.map(p=>p.d),0.001);
+      const halfW=itemW*0.4;
+
+      // Draw violin shape
+      ctx.beginPath();
+      kde.forEach((p,j)=>{
+        const y=yScale(p.x);
+        const w=(p.d/maxD)*halfW;
+        if(j===0)ctx.moveTo(cx-w,y);else ctx.lineTo(cx-w,y);
+      });
+      for(let j=kde.length-1;j>=0;j--){
+        const p=kde[j];
+        const y=yScale(p.x);
+        const w=(p.d/maxD)*halfW;
+        ctx.lineTo(cx+w,y);
+      }
+      ctx.closePath();
+      ctx.fillStyle=g.color;ctx.globalAlpha=0.3;ctx.fill();
+      ctx.globalAlpha=1;ctx.strokeStyle=g.color;ctx.lineWidth=1.5;ctx.stroke();
+
+      // Inner box (thin)
+      const boxW=6;
+      ctx.fillStyle=g.color;ctx.globalAlpha=0.5;
+      ctx.fillRect(cx-boxW/2,yScale(st.q3),boxW,yScale(st.q1)-yScale(st.q3));
+      ctx.globalAlpha=1;
+
+      // Median line
+      ctx.strokeStyle="#fff";ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(cx-boxW/2-2,yScale(st.med));ctx.lineTo(cx+boxW/2+2,yScale(st.med));ctx.stroke();
+
+      // Mean diamond
+      const my=yScale(st.mean);
+      ctx.fillStyle="#fff";
+      ctx.beginPath();ctx.moveTo(cx,my-3);ctx.lineTo(cx+3,my);ctx.lineTo(cx,my+3);ctx.lineTo(cx-3,my);ctx.closePath();ctx.fill();
+
+    }else{
+      // Box-whisker plot
+      const boxW=Math.min(30,itemW*0.5);
+
+      // Whisker line (min to max)
+      ctx.strokeStyle=g.color;ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(cx,yScale(st.min));ctx.lineTo(cx,yScale(st.max));ctx.stroke();
+
+      // Whisker caps
+      const capW=boxW*0.5;
+      ctx.beginPath();ctx.moveTo(cx-capW,yScale(st.min));ctx.lineTo(cx+capW,yScale(st.min));ctx.stroke();
+      ctx.beginPath();ctx.moveTo(cx-capW,yScale(st.max));ctx.lineTo(cx+capW,yScale(st.max));ctx.stroke();
+
+      // Box (Q1 to Q3)
+      const boxTop=yScale(st.q3);
+      const boxBot=yScale(st.q1);
+      ctx.fillStyle=g.color;ctx.globalAlpha=0.35;
+      ctx.fillRect(cx-boxW/2,boxTop,boxW,boxBot-boxTop);
+      ctx.globalAlpha=1;
+      ctx.strokeStyle=g.color;ctx.lineWidth=1.5;
+      ctx.strokeRect(cx-boxW/2,boxTop,boxW,boxBot-boxTop);
+
+      // Median line
+      ctx.strokeStyle="#fff";ctx.lineWidth=2.5;
+      ctx.beginPath();ctx.moveTo(cx-boxW/2,yScale(st.med));ctx.lineTo(cx+boxW/2,yScale(st.med));ctx.stroke();
+
+      // Mean diamond
+      const my=yScale(st.mean);
+      ctx.fillStyle=greenCol;
+      ctx.beginPath();ctx.moveTo(cx,my-4);ctx.lineTo(cx+4,my);ctx.lineTo(cx,my+4);ctx.lineTo(cx-4,my);ctx.closePath();ctx.fill();
+
+      // Individual data points (jittered)
+      g.vals.forEach((v,j)=>{
+        const py=yScale(v);
+        const jitter=(Math.random()-0.5)*boxW*0.7;
+        const compC=_psCompCol(g.compounds[j]);
+        ctx.fillStyle=_psGroupBy==="compound"?g.color:compC;
+        ctx.globalAlpha=0.85;
+        ctx.beginPath();ctx.arc(cx+jitter,py,2.5,0,Math.PI*2);ctx.fill();
+        ctx.globalAlpha=1;
+      });
+    }
+
+    // Individual data points for violin too
+    if(isViolin){
+      g.vals.forEach((v,j)=>{
+        const py=yScale(v);
+        const jitter=(Math.random()-0.5)*8;
+        const compC=_psCompCol(g.compounds[j]);
+        ctx.fillStyle=_psGroupBy==="compound"?g.color:compC;
+        ctx.globalAlpha=0.85;
+        ctx.beginPath();ctx.arc(cx+jitter,py,2.5,0,Math.PI*2);ctx.fill();
+        ctx.globalAlpha=1;
+      });
+    }
+
+    // X-axis label
+    ctx.save();
+    ctx.translate(cx,padT+chartH+8);
+    ctx.rotate(_psGroupBy==="driver"&&gArr.length>10?-Math.PI/4:0);
+    ctx.fillStyle=g.color;ctx.font="bold 10px -apple-system,sans-serif";
+    ctx.textAlign=_psGroupBy==="driver"&&gArr.length>10?"right":"center";
+    ctx.fillText(g.label,0,0);
+    ctx.restore();
+
+    // Compound dots for "driver" and "stint" groupings — show unique compounds used
+    if(_psGroupBy!=="compound"){
+      const uniqComp=[...new Set(g.compounds)];
+      uniqComp.forEach((c,ci)=>{
+        const dotX=cx-(uniqComp.length-1)*5+ci*10;
+        const dotY=padT+chartH+(_psGroupBy==="driver"&&gArr.length>10?30:20);
+        ctx.fillStyle=_psCompCol(c);
+        ctx.beginPath();ctx.arc(dotX,dotY,4,0,Math.PI*2);ctx.fill();
+        ctx.strokeStyle="rgba(0,0,0,.3)";ctx.lineWidth=0.5;ctx.stroke();
+      });
+    }
+
+    // Value annotation (median)
+    ctx.fillStyle=text2Col;ctx.font="9px -apple-system,sans-serif";ctx.textAlign="center";
+    ctx.fillText(st.med.toFixed(2)+"s",cx,yScale(st.max)-8);
+    // N count
+    ctx.fillText("n="+g.vals.length,cx,padT+chartH+(_psGroupBy==="driver"&&gArr.length>10?42:32));
+  });
+
+  // Legend
+  ctx.fillStyle=text2Col;ctx.font="9px -apple-system,sans-serif";ctx.textAlign="right";
+  if(isViolin){
+    ctx.fillText("Shaded area = density · ─ median · ◆ mean · ● data points",W-10,16);
+  }else{
+    ctx.fillText("Box = Q1–Q3 · ─ median · ◆ mean · │ min–max · ● data points",W-10,16);
+  }
+
+  // Compound legend at bottom if grouping by driver or stint
+  if(_psGroupBy!=="compound"){
+    const allComps=[...new Set(filtered.map(p=>p.compIn))].filter(c=>c!=="?");
+    if(allComps.length){
+      let lx=padL;
+      const ly=totalH-8;
+      ctx.font="bold 9px -apple-system,sans-serif";ctx.textAlign="left";
+      ctx.fillStyle=text2Col;ctx.fillText("TYRES:",lx,ly);lx+=38;
+      allComps.forEach(c=>{
+        ctx.fillStyle=_psCompCol(c);
+        ctx.beginPath();ctx.arc(lx,ly-3,4,0,Math.PI*2);ctx.fill();
+        lx+=10;
+        ctx.fillStyle=textCol;ctx.fillText(c,lx,ly);
+        lx+=ctx.measureText(c).width+12;
+      });
+    }
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   FUEL-CORRECTED RACE PACE — normalize lap times to mid-race fuel load
+   ══════════════════════════════════════════════════════════════════════════════ */
+function drawRdFuelCorrected(){
+  const el=document.getElementById("rd-fuel-corrected");
+  if(!el)return;
+  const d=STATE.sessionData;if(!d)return;
+  const drivers=d.drivers||{};
+  const stints=d.stints||[];
+  const allLaps=(d.laps||[]).filter(l=>l.lap_duration&&l.lap_duration>0);
+  if(!allLaps.length||!stints.length){
+    el.innerHTML='<div style="padding:16px;color:var(--text2);font-size:12px">No stint data available for fuel correction.</div>';
+    return;
+  }
+
+  const FUEL_EFFECT=0.1; // seconds per lap fuel burn-off (~3.1kg/lap, ~0.03s/kg)
+  const totalRaceLaps=Math.max(...allLaps.map(l=>l.lap_number));
+  const midRaceLap=totalRaceLaps/2;
+
+  // Apply lap range filter (consistent with Race Dashboard)
+  const lapMin=STATE.rdLapMin||1;
+  const lapMax=STATE.rdLapMax||totalRaceLaps;
+
+  // Build per-driver-per-stint data with fuel correction
+  const stintData=[];
+  stints.forEach(st=>{
+    const dn=st.driver_number;
+    const drv=drivers[dn]||{};
+    const stintLaps=allLaps.filter(l=>
+      l.driver_number===dn &&
+      l.lap_number>=st.lap_start && l.lap_number<=st.lap_end &&
+      l.lap_number>=lapMin && l.lap_number<=lapMax &&
+      l.lap_duration>0
+    );
+    if(stintLaps.length<2)return;
+    stintLaps.sort((a,b)=>a.lap_number-b.lap_number);
+
+    // Outlier removal: >107% of median, exclude pit-out laps
+    const sorted=[...stintLaps].sort((a,b)=>a.lap_duration-b.lap_duration);
+    const median=sorted[Math.floor(sorted.length/2)].lap_duration;
+    const clean=stintLaps.filter(l=>l.lap_duration<median*1.07&&!l.is_pit_out_lap);
+    if(clean.length<3)return;
+
+    // Raw average pace
+    const rawAvg=clean.reduce((s,l)=>s+l.lap_duration,0)/clean.length;
+
+    // Fuel-corrected: corrected = lapTime - FUEL_EFFECT * (lapNumber - midRaceLap)
+    // Normalizes to mid-race fuel load
+    const correctedTimes=clean.map(l=>l.lap_duration - FUEL_EFFECT*(l.lap_number - midRaceLap));
+    const fuelCorrectedAvg=correctedTimes.reduce((s,t)=>s+t,0)/correctedTimes.length;
+
+    const compound=(st.compound||"UNKNOWN").toUpperCase();
+    const fresh=st.tyre_age_at_start===0||st.tyre_age_at_start==null;
+
+    stintData.push({
+      dn, acronym:drv.acronym||"#"+dn, team:drv.team||"",
+      stintNum:st.stint_number, compound, fresh,
+      lapStart:st.lap_start, lapEnd:st.lap_end,
+      cleanCount:clean.length, totalLaps:stintLaps.length,
+      rawAvg, fuelCorrectedAvg,
+      correction:rawAvg-fuelCorrectedAvg
+    });
+  });
+
+  if(!stintData.length){
+    el.innerHTML='<div style="padding:16px;color:var(--text2);font-size:12px">Not enough clean laps for fuel correction analysis.</div>';
+    return;
+  }
+
+  // Aggregate per-driver overall fuel-corrected pace (weighted by clean lap count)
+  const driverMap={};
+  stintData.forEach(s=>{
+    if(!driverMap[s.dn])driverMap[s.dn]={dn:s.dn,acronym:s.acronym,team:s.team,
+      rawTimes:[],correctedTimes:[],totalClean:0,stintCount:0};
+    const dm=driverMap[s.dn];
+    dm.rawTimes.push({avg:s.rawAvg,count:s.cleanCount});
+    dm.correctedTimes.push({avg:s.fuelCorrectedAvg,count:s.cleanCount});
+    dm.totalClean+=s.cleanCount;
+    dm.stintCount++;
+  });
+
+  const overallData=Object.values(driverMap).map(dm=>{
+    const rawAvg=dm.rawTimes.reduce((s,t)=>s+t.avg*t.count,0)/dm.totalClean;
+    const fcAvg=dm.correctedTimes.reduce((s,t)=>s+t.avg*t.count,0)/dm.totalClean;
+    return{...dm,rawAvg,fcAvg,correction:rawAvg-fcAvg};
+  });
+
+  const view=STATE.rdFuelView||"overall";
+  let html='';
+
+  // Note about fuel correction
+  html+=`<div class="fc-note">\u26FD Fuel correction: ${FUEL_EFFECT.toFixed(2)}s/lap normalized to mid-race (lap ${Math.round(midRaceLap)}). Clean laps only (no pit-out, no outliers &gt;107% median, min 3 laps/stint).</div>`;
+
+  // View toggle
+  html+=`<div class="fc-view-toggle">`;
+  html+=`<button class="fc-view-btn${view==="overall"?" active":""}" onclick="setFcView('overall')">Overall Pace</button>`;
+  html+=`<button class="fc-view-btn${view==="stints"?" active":""}" onclick="setFcView('stints')">Per-Stint Breakdown</button>`;
+  html+=`</div>`;
+
+  if(view==="overall"){
+    html+=_renderFcOverallTable(overallData);
+  }else{
+    html+=_renderFcStintsTable(stintData);
+  }
+
+  el.innerHTML=html;
+}
+
+function setFcView(view){
+  STATE.rdFuelView=view;
+  drawRdFuelCorrected();
+}
+
+function sortFcTable(col){
+  if(STATE.rdFuelSort===col){STATE.rdFuelSortAsc=!STATE.rdFuelSortAsc;}
+  else{STATE.rdFuelSort=col;STATE.rdFuelSortAsc=true;}
+  drawRdFuelCorrected();
+}
+
+function _renderFcOverallTable(data){
+  const sortCol=STATE.rdFuelSort||"fuelCorrected";
+  const asc=STATE.rdFuelSortAsc!==false;
+
+  const sorted=[...data].sort((a,b)=>{
+    let va,vb;
+    if(sortCol==="fuelCorrected"){va=a.fcAvg;vb=b.fcAvg;}
+    else if(sortCol==="raw"){va=a.rawAvg;vb=b.rawAvg;}
+    else if(sortCol==="correction"){va=Math.abs(a.correction);vb=Math.abs(b.correction);}
+    else if(sortCol==="gap"){va=a.fcAvg;vb=b.fcAvg;} // gap is relative to best FC
+    else if(sortCol==="driver"){va=a.acronym;vb=b.acronym;return asc?va.localeCompare(vb):vb.localeCompare(va);}
+    else{va=a.fcAvg;vb=b.fcAvg;}
+    return asc?(va-vb):(vb-va);
+  });
+
+  const bestFc=Math.min(...sorted.map(r=>r.fcAvg));
+  const bestRaw=Math.min(...sorted.map(r=>r.rawAvg));
+
+  let html='<table class="fc-table"><thead><tr>';
+  const _sh=(col,label)=>`<th onclick="sortFcTable('${col}')" class="${sortCol===col?"fc-sorted":""}">${label}${sortCol===col?(asc?" \u25B2":" \u25BC"):""}</th>`;
+  html+=`<th>#</th>`;
+  html+=_sh("driver","Driver");
+  html+=_sh("fuelCorrected","FC Pace");
+  html+=_sh("raw","Raw Pace");
+  html+=_sh("correction","Correction");
+  html+=_sh("gap","Gap to Best");
+  html+=`<th>Stints</th><th>Clean Laps</th>`;
+  html+='</tr></thead><tbody>';
+
+  sorted.forEach((r,i)=>{
+    const color=teamColor(r.team);
+    const isBestFc=Math.abs(r.fcAvg-bestFc)<0.001;
+    const isBestRaw=Math.abs(r.rawAvg-bestRaw)<0.001;
+    const gapToBest=r.fcAvg-bestFc;
+    const gapStr=isBestFc?"FASTEST":`+${gapToBest.toFixed(3)}s`;
+    const gapClass=isBestFc?"fc-best":(gapToBest<0.3?"fc-delta-good":"fc-delta-bad");
+    const corrStr=r.correction>=0?`\u2212${Math.abs(r.correction).toFixed(3)}s`:`+${Math.abs(r.correction).toFixed(3)}s`;
+
+    html+=`<tr>`;
+    html+=`<td style="font-weight:700;color:var(--text2)">${i+1}</td>`;
+    html+=`<td><span style="color:${color};font-weight:700">${esc(r.acronym)}</span></td>`;
+    html+=`<td${isBestFc?' class="fc-best"':""}>${fmtTime(r.fcAvg)}</td>`;
+    html+=`<td${isBestRaw?' class="fc-best"':""}>${fmtTime(r.rawAvg)}</td>`;
+    html+=`<td class="fc-correction">${corrStr}</td>`;
+    html+=`<td class="${gapClass}">${gapStr}</td>`;
+    html+=`<td>${r.stintCount}</td>`;
+    html+=`<td>${r.totalClean}</td>`;
+    html+=`</tr>`;
+  });
+
+  html+='</tbody></table>';
+  return html;
+}
+
+function _renderFcStintsTable(data){
+  // Sort: by compound first, then by fuel-corrected pace
+  const sorted=[...data].sort((a,b)=>{
+    if(a.compound!==b.compound)return a.compound.localeCompare(b.compound);
+    return a.fuelCorrectedAvg-b.fuelCorrectedAvg;
+  });
+
+  // Find best FC pace per compound
+  const bestByCompound={};
+  sorted.forEach(r=>{
+    if(!bestByCompound[r.compound]||r.fuelCorrectedAvg<bestByCompound[r.compound]){
+      bestByCompound[r.compound]=r.fuelCorrectedAvg;
+    }
+  });
+
+  let html='<table class="fc-table"><thead><tr>';
+  html+='<th>#</th><th>Driver</th><th>Stint</th><th>Compound</th>';
+  html+='<th>Laps</th><th>FC Pace</th><th>Raw Pace</th>';
+  html+='<th>Correction</th><th>Gap (in compound)</th><th>Clean</th>';
+  html+='</tr></thead><tbody>';
+
+  let lastCompound=null;
+  let rank=0;
+  sorted.forEach(r=>{
+    if(r.compound!==lastCompound){rank=0;lastCompound=r.compound;}
+    rank++;
+    const color=teamColor(r.team);
+    const compCol=resolveColor(compoundColor(r.compound));
+    const best=bestByCompound[r.compound];
+    const isBest=Math.abs(r.fuelCorrectedAvg-best)<0.001;
+    const gap=r.fuelCorrectedAvg-best;
+    const gapStr=isBest?"FASTEST":`+${gap.toFixed(3)}s`;
+    const gapClass=isBest?"fc-best":"fc-delta-bad";
+    const corrSign=r.correction>=0?"\u2212":"+";
+    const corrStr=`${corrSign}${Math.abs(r.correction).toFixed(3)}s`;
+
+    html+=`<tr${rank===1?' style="border-top:2px solid var(--border)"':""}>`;
+    html+=`<td style="font-weight:700;color:var(--text2)">${rank}</td>`;
+    html+=`<td><span style="color:${color};font-weight:700">${esc(r.acronym)}</span></td>`;
+    html+=`<td style="font-size:10px">S${r.stintNum}</td>`;
+    html+=`<td><span class="rd-compound" style="background:${compCol}"></span>${r.compound}`;
+    html+=r.fresh?` <span style="color:var(--green);font-size:9px;font-weight:700">N</span>`
+                 :` <span style="color:var(--yellow);font-size:9px;font-weight:700">U</span>`;
+    html+=`</td>`;
+    html+=`<td style="font-size:10px">L${r.lapStart}\u2013L${r.lapEnd} (${r.totalLaps})</td>`;
+    html+=`<td${isBest?' class="fc-best"':""}>${fmtTime(r.fuelCorrectedAvg)}</td>`;
+    html+=`<td>${fmtTime(r.rawAvg)}</td>`;
+    html+=`<td class="fc-correction">${corrStr}</td>`;
+    html+=`<td class="${gapClass}">${gapStr}</td>`;
+    html+=`<td>${r.cleanCount}</td>`;
+    html+=`</tr>`;
+  });
+
+  html+='</tbody></table>';
+  return html;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   RACE PACE DISTRIBUTION — Box/Whisker & Violin Charts
+   ══════════════════════════════════════════════════════════════════════════════ */
+function setRpdMode(mode){
+  STATE.rpdMode=mode;
+  document.querySelectorAll(".rpd-panel-toolbar .rpd-toggle").forEach(b=>{
+    if(b.id==="rpd-mode-raw")b.classList.toggle("active",mode==="raw");
+    if(b.id==="rpd-mode-fc")b.classList.toggle("active",mode==="fc");
+  });
+  drawRacePaceDistribution();
+}
+function setRpdChart(chart){
+  STATE.rpdChart=chart;
+  document.querySelectorAll(".rpd-panel-toolbar .rpd-toggle").forEach(b=>{
+    if(b.id==="rpd-chart-box")b.classList.toggle("active",chart==="box"||chart==="both");
+    if(b.id==="rpd-chart-violin")b.classList.toggle("active",chart==="violin"||chart==="both");
+    if(b.id==="rpd-chart-both")b.classList.toggle("active",chart==="both");
+  });
+  const boxW=document.getElementById("rpd-box-wrap");
+  const violinW=document.getElementById("rpd-violin-wrap");
+  if(boxW)boxW.style.display=(chart==="box"||chart==="both")?"block":"none";
+  if(violinW)violinW.style.display=(chart==="violin"||chart==="both")?"block":"none";
+  drawRacePaceDistribution();
+}
+function setRpdStint(stint){
+  STATE.rpdStint=stint;
+  const btns=document.getElementById("rpd-stint-btns");
+  if(btns)btns.querySelectorAll(".rpd-toggle").forEach(b=>b.classList.toggle("active",b.dataset.stint===stint));
+  drawRacePaceDistribution();
+}
+
+const _rpdCompColors={SOFT:"#ff3333",MEDIUM:"#ffd700",HARD:"#e0e0e0",INTERMEDIATE:"#22c55e",WET:"#3b82f6",UNKNOWN:"#888","?":"#888"};
+function _rpdCompCol(c){return _rpdCompColors[(c||"").toUpperCase()]||"#888";}
+
+function _getRpdDriverData(){
+  const d=STATE.sessionData;if(!d)return[];
+  const drivers=d.drivers||{};
+  const stints=d.stints||[];
+  const allLaps=(d.laps||[]).filter(l=>l.lap_duration&&l.lap_duration>0);
+  if(!allLaps.length||!stints.length)return[];
+
+  const FUEL_EFFECT=0.10;
+  const totalRaceLaps=Math.max(...allLaps.map(l=>l.lap_number));
+  const midRaceLap=totalRaceLaps/2;
+  const isFc=(STATE.rpdMode||"raw")==="fc";
+  const stintFilter=STATE.rpdStint||"all";
+
+  // Number stints per driver
+  const driverStintNums={};
+  const sortedStints=[...stints].sort((a,b)=>(a.lap_start||0)-(b.lap_start||0));
+  sortedStints.forEach(st=>{
+    const dn=st.driver_number;
+    if(!driverStintNums[dn])driverStintNums[dn]=0;
+    driverStintNums[dn]++;
+    st._stintNum=driverStintNums[dn];
+  });
+
+  // Collect clean laps per driver
+  const driverLaps={};
+  sortedStints.forEach(st=>{
+    // Stint filter
+    if(stintFilter!=="all"&&st._stintNum!==parseInt(stintFilter))return;
+
+    const dn=st.driver_number;
+    const drv=drivers[dn]||{};
+    const comp=((st.compound||"?").toUpperCase());
+    const stintLaps=allLaps.filter(l=>
+      l.driver_number===dn&&
+      l.lap_number>=st.lap_start&&l.lap_number<=st.lap_end&&
+      l.lap_duration>0
+    );
+    if(stintLaps.length<2)return;
+    stintLaps.sort((a,b)=>a.lap_number-b.lap_number);
+    const sorted=[...stintLaps].sort((a,b)=>a.lap_duration-b.lap_duration);
+    const median=sorted[Math.floor(sorted.length/2)].lap_duration;
+    const clean=stintLaps.filter(l=>l.lap_duration<median*1.07&&!l.is_pit_out_lap);
+    if(clean.length<2)return;
+
+    if(!driverLaps[dn])driverLaps[dn]={dn,acronym:drv.acronym||"#"+dn,fullName:drv.full_name||drv.acronym||"#"+dn,team:drv.team||"",times:[],compounds:[],compoundSet:new Set()};
+    clean.forEach(l=>{
+      const t=isFc?(l.lap_duration-FUEL_EFFECT*(l.lap_number-midRaceLap)):l.lap_duration;
+      driverLaps[dn].times.push(t);
+      driverLaps[dn].compounds.push(comp);
+      driverLaps[dn].compoundSet.add(comp);
+    });
+  });
+
+  // Compute stats for each driver
+  const result=Object.values(driverLaps).filter(d=>d.times.length>=2).map(d=>{
+    const t=[...d.times].sort((a,b)=>a-b);
+    const n=t.length;
+    const q1=t[Math.floor(n*0.25)];
+    const median=t[Math.floor(n*0.5)];
+    const q3=t[Math.floor(n*0.75)];
+    const iqr=q3-q1;
+    const whiskerLo=Math.max(t[0],q1-1.5*iqr);
+    const whiskerHi=Math.min(t[n-1],q3+1.5*iqr);
+    const mean=t.reduce((s,v)=>s+v,0)/n;
+    const outliers=t.filter(v=>v<whiskerLo||v>whiskerHi);
+    // Sort compounds to match sorted times order
+    const compSorted=d.times.map((v,i)=>({v,c:d.compounds[i]})).sort((a,b)=>a.v-b.v).map(x=>x.c);
+    return{...d,q1,median,q3,iqr,whiskerLo,whiskerHi,mean,min:t[0],max:t[n-1],count:n,outliers,sorted:t,compSorted,compoundSet:[...d.compoundSet]};
+  });
+  result.sort((a,b)=>a.median-b.median);
+  return result;
+}
+
+function drawRacePaceDistribution(){
+  // Build stint filter buttons
+  const stintBtnsEl=document.getElementById("rpd-stint-btns");
+  if(stintBtnsEl){
+    const d=STATE.sessionData;
+    const stints=(d&&d.stints)||[];
+    // Find max stint count across all drivers
+    const driverStCnt={};
+    [...stints].sort((a,b)=>(a.lap_start||0)-(b.lap_start||0)).forEach(st=>{
+      const dn=st.driver_number;driverStCnt[dn]=(driverStCnt[dn]||0)+1;
+    });
+    const maxStints=Math.max(0,...Object.values(driverStCnt));
+    const cur=STATE.rpdStint||"all";
+    let bh=`<button class="rpd-toggle ${cur==="all"?"active":""}" data-stint="all" onclick="setRpdStint('all')">Tumunu</button>`;
+    for(let i=1;i<=Math.min(maxStints,6);i++){
+      bh+=`<button class="rpd-toggle ${cur===String(i)?"active":""}" data-stint="${i}" onclick="setRpdStint('${i}')">Stint ${i}</button>`;
+    }
+    stintBtnsEl.innerHTML=bh;
+  }
+
+  const chart=STATE.rpdChart||"box";
+  if(chart==="box"||chart==="both")drawRacePaceBoxWhisker();
+  if(chart==="violin"||chart==="both")drawRacePaceViolin();
+  const stintLabel=(STATE.rpdStint&&STATE.rpdStint!=="all")?` — Stint ${STATE.rpdStint}`:"";
+  const modeLabel=((STATE.rpdMode||"raw")==="fc"?"Yakit-Duzeltmeli Tempo":"Ham Tempo")+stintLabel;
+  const bl=document.getElementById("rpd-box-label");if(bl)bl.textContent=modeLabel;
+  const vl=document.getElementById("rpd-violin-label");if(vl)vl.textContent=modeLabel;
+  if(_rpdPinnedDrivers.size)_renderRpdPinned();
+}
+
+// Shared tooltip builder (Turkish labels) — used for hover + pinned cards
+function _rpdTooltipHtml(d,bestMedian){
+  const isFc=(STATE.rpdMode||"raw")==="fc";
+  const modeTag=isFc?"YD ":"";
+  const gap=bestMedian?(d.median-bestMedian):0;
+  const gapStr=gap<0.001?"EN HIZLI":`+${gap.toFixed(3)}s`;
+  const gapCls=gap<0.001?"tt-best":"";
+  const nameLine=d.fullName?`<div style="font-size:9px;color:var(--text2);margin-bottom:2px">${esc(d.fullName)}</div>`:"";
+  return`<div class="tt-driver" style="color:${teamColor(d.team)}">${esc(d.acronym)} <span style="font-weight:400;font-size:10px;color:var(--text2)">${d.count} tur</span></div>
+${nameLine}<div class="tt-row"><span class="tt-label">${modeTag}Medyan:</span><span class="tt-val">${fmtTime(d.median)}</span></div>
+<div class="tt-row"><span class="tt-label">Ortalama:</span><span class="tt-val">${fmtTime(d.mean)}</span></div>
+<div class="tt-sep"></div>
+<div class="tt-row"><span class="tt-label">Q1 (alt %25):</span><span class="tt-val">${fmtTime(d.q1)}</span></div>
+<div class="tt-row"><span class="tt-label">Q3 (ust %75):</span><span class="tt-val">${fmtTime(d.q3)}</span></div>
+<div class="tt-row"><span class="tt-label">IQR:</span><span class="tt-val">${(d.iqr).toFixed(3)}s</span></div>
+<div class="tt-sep"></div>
+<div class="tt-row"><span class="tt-label">Min:</span><span class="tt-val">${fmtTime(d.min)}</span></div>
+<div class="tt-row"><span class="tt-label">Maks:</span><span class="tt-val">${fmtTime(d.max)}</span></div>
+<div class="tt-row"><span class="tt-label">Aykiri:</span><span class="tt-val">${d.outliers.length} tur</span></div>
+<div class="tt-sep"></div>
+<div class="tt-row"><span class="tt-label">Fark:</span><span class="tt-val ${gapCls}">${gapStr}</span></div>`;
+}
+
+// Build a pinned card HTML for a driver (broadcast-ready format)
+function _rpdPinnedCardHtml(d,bestMedian,idx){
+  const isFc=(STATE.rpdMode||"raw")==="fc";
+  const modeTag=isFc?"YD ":"";
+  const gap=bestMedian?(d.median-bestMedian):0;
+  const gapStr=gap<0.001?"EN HIZLI":`+${gap.toFixed(3)}s`;
+  const gapCls=gap<0.001?"pin-best":"";
+  const color=teamColor(d.team);
+  return`<div class="rpd-pinned-card" data-pin-dn="${d.dn}" style="border-left:3px solid ${color}">
+<button class="pin-close" onclick="unpinRpdDriver(${d.dn})">&times;</button>
+<div class="pin-driver" style="color:${color}">${esc(d.acronym)}</div>
+<div class="pin-name">${esc(d.fullName||d.acronym)} &mdash; ${esc(d.team)}</div>
+<div class="pin-row"><span class="pin-label">${modeTag}Medyan:</span><span class="pin-val">${fmtTime(d.median)}</span></div>
+<div class="pin-row"><span class="pin-label">Ortalama:</span><span class="pin-val">${fmtTime(d.mean)}</span></div>
+<div class="pin-row"><span class="pin-label">Q1&ndash;Q3:</span><span class="pin-val">${fmtTime(d.q1)}&ndash;${fmtTime(d.q3)}</span></div>
+<div class="pin-row"><span class="pin-label">IQR:</span><span class="pin-val">${d.iqr.toFixed(3)}s</span></div>
+<div class="pin-row"><span class="pin-label">Min / Maks:</span><span class="pin-val">${fmtTime(d.min)} / ${fmtTime(d.max)}</span></div>
+<div class="pin-row"><span class="pin-label">Tur:</span><span class="pin-val">${d.count}</span></div>
+<div class="pin-row"><span class="pin-label">Aykiri:</span><span class="pin-val">${d.outliers.length}</span></div>
+<div class="pin-row" style="margin-top:2px;border-top:1px solid var(--border);padding-top:2px"><span class="pin-label">Fark:</span><span class="pin-val ${gapCls}">${gapStr}</span></div>
+</div>`;
+}
+
+// Pinned drivers state
+const _rpdPinnedDrivers=new Set();
+function pinRpdDriver(dn){
+  _rpdPinnedDrivers.add(dn);
+  _renderRpdPinned();
+}
+function unpinRpdDriver(dn){
+  _rpdPinnedDrivers.delete(dn);
+  _renderRpdPinned();
+}
+function _renderRpdPinned(){
+  const wrap=document.getElementById("rpd-pinned-wrap");
+  if(!wrap)return;
+  if(!_rpdPinnedDrivers.size){wrap.innerHTML="";return;}
+  const data=_getRpdDriverData();
+  if(!data.length){wrap.innerHTML="";return;}
+  const bestMedian=data[0]?.median||0;
+  let html="";
+  data.forEach(d=>{
+    if(_rpdPinnedDrivers.has(d.dn)){
+      html+=_rpdPinnedCardHtml(d,bestMedian);
+    }
+  });
+  wrap.innerHTML=html;
+}
+
+// Shared hover + click handler factory
+function _rpdHoverHandler(canvas,tooltipId,hitRegionsKey){
+  const tooltip=document.getElementById(tooltipId);
+  if(!tooltip||!canvas)return;
+  if(canvas._rpdMoveHandler)canvas.removeEventListener("mousemove",canvas._rpdMoveHandler);
+  if(canvas._rpdLeaveHandler)canvas.removeEventListener("mouseleave",canvas._rpdLeaveHandler);
+  if(canvas._rpdClickHandler)canvas.removeEventListener("click",canvas._rpdClickHandler);
+
+  canvas._rpdMoveHandler=function(e){
+    const rect=canvas.getBoundingClientRect();
+    const mx=e.clientX-rect.left;
+    const regions=canvas._rpdHitRegions||[];
+    let found=null;
+    for(const r of regions){if(mx>=r.x0&&mx<=r.x1){found=r;break;}}
+    if(found){
+      tooltip.innerHTML=found.html;
+      tooltip.style.display="block";
+      const pw=canvas.parentElement.clientWidth;
+      let tx=found.cx-80;
+      if(tx<0)tx=4;if(tx+170>pw)tx=pw-174;
+      tooltip.style.left=tx+"px";
+      tooltip.style.top=Math.max(0,found.boxTop-10)+"px";
+    }else{
+      tooltip.style.display="none";
+    }
+  };
+  canvas._rpdLeaveHandler=function(){tooltip.style.display="none";};
+  canvas._rpdClickHandler=function(e){
+    const rect=canvas.getBoundingClientRect();
+    const mx=e.clientX-rect.left;
+    const regions=canvas._rpdHitRegions||[];
+    for(const r of regions){
+      if(mx>=r.x0&&mx<=r.x1){
+        if(_rpdPinnedDrivers.has(r.dn))unpinRpdDriver(r.dn);
+        else pinRpdDriver(r.dn);
+        break;
+      }
+    }
+  };
+  canvas.addEventListener("mousemove",canvas._rpdMoveHandler);
+  canvas.addEventListener("mouseleave",canvas._rpdLeaveHandler);
+  canvas.addEventListener("click",canvas._rpdClickHandler);
+}
+
+function drawRacePaceBoxWhisker(){
+  const canvas=document.getElementById("rpd-box-canvas");
+  if(!canvas)return;
+  const ctx=canvas.getContext("2d");
+  const data=_getRpdDriverData();
+  if(!data.length){ctx.clearRect(0,0,canvas.width,canvas.height);canvas._rpdHitRegions=[];return;}
+
+  const dpr=window.devicePixelRatio||1;
+  const W=canvas.parentElement.clientWidth-20;
+  const H=360;
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  canvas.style.width=W+"px";canvas.style.height=H+"px";
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+
+  const pad={top:20,right:20,bottom:70,left:60};
+  const plotW=W-pad.left-pad.right;
+  const plotH=H-pad.top-pad.bottom;
+  const n=data.length;
+  const barW=Math.min(28,Math.max(10,(plotW/n)*0.5));
+  const gap=(plotW-barW*n)/(n+1);
+
+  const allMin=Math.min(...data.map(d=>d.whiskerLo))-0.3;
+  const allMax=Math.max(...data.map(d=>d.whiskerHi))+0.3;
+  const yRange=allMax-allMin||1;
+  const yScale=v=>pad.top+plotH-(((v-allMin)/yRange)*plotH);
+
+  const cs=getComputedStyle(document.documentElement);
+  const borderCol=cs.getPropertyValue("--border").trim()||"#2e2e33";
+  const text2Col=cs.getPropertyValue("--text2").trim()||"#a1a1aa";
+
+  ctx.strokeStyle=borderCol;ctx.lineWidth=0.5;
+  const gridStep=_niceStep(yRange,6);
+  for(let v=Math.ceil(allMin/gridStep)*gridStep;v<=allMax;v+=gridStep){
+    const y=yScale(v);
+    ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(W-pad.right,y);ctx.stroke();
+    ctx.fillStyle=text2Col;ctx.font="10px -apple-system,sans-serif";ctx.textAlign="right";
+    ctx.fillText(fmtTime(v),pad.left-6,y+3);
+  }
+
+  const bestMedian=data[0]?.median||0;
+  const hitRegions=[];
+
+  data.forEach((d,i)=>{
+    const cx=pad.left+gap+(gap+barW)*i+barW/2;
+    const color=teamColor(d.team);
+
+    ctx.strokeStyle=color;ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(cx,yScale(d.whiskerHi));ctx.lineTo(cx,yScale(d.whiskerLo));ctx.stroke();
+    ctx.beginPath();ctx.moveTo(cx-barW*0.3,yScale(d.whiskerHi));ctx.lineTo(cx+barW*0.3,yScale(d.whiskerHi));ctx.stroke();
+    ctx.beginPath();ctx.moveTo(cx-barW*0.3,yScale(d.whiskerLo));ctx.lineTo(cx+barW*0.3,yScale(d.whiskerLo));ctx.stroke();
+
+    const boxTop=yScale(d.q3);const boxBot=yScale(d.q1);
+    ctx.fillStyle=color+"30";ctx.fillRect(cx-barW/2,boxTop,barW,boxBot-boxTop);
+    ctx.strokeStyle=color;ctx.lineWidth=1.5;ctx.strokeRect(cx-barW/2,boxTop,barW,boxBot-boxTop);
+
+    const medY=yScale(d.median);
+    ctx.strokeStyle="#fff";ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(cx-barW/2,medY);ctx.lineTo(cx+barW/2,medY);ctx.stroke();
+
+    const meanY=yScale(d.mean);ctx.fillStyle=color;
+    ctx.beginPath();ctx.moveTo(cx,meanY-3);ctx.lineTo(cx+3,meanY);ctx.lineTo(cx,meanY+3);ctx.lineTo(cx-3,meanY);ctx.closePath();ctx.fill();
+
+    // Outlier dots colored by compound
+    d.outliers.forEach(v=>{
+      const idx=d.sorted.indexOf(v);
+      const comp=(d.compSorted&&d.compSorted[idx])||"?";
+      ctx.fillStyle=_rpdCompCol(comp);ctx.globalAlpha=0.8;
+      ctx.beginPath();ctx.arc(cx+(Math.random()-0.5)*barW*0.4,yScale(v),2.5,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=1;
+    });
+
+    // Driver name
+    ctx.fillStyle=color;ctx.font="bold 10px -apple-system,sans-serif";ctx.textAlign="center";
+    ctx.fillText(d.acronym,cx,H-pad.bottom+14);
+    ctx.fillStyle=text2Col;ctx.font="8px -apple-system,sans-serif";
+    ctx.fillText(d.count+"T",cx,H-pad.bottom+24);
+
+    // Compound dots below driver name
+    const comps=d.compoundSet||[];
+    comps.forEach((c,ci)=>{
+      const dotX=cx-(comps.length-1)*5+ci*10;
+      ctx.fillStyle=_rpdCompCol(c);
+      ctx.beginPath();ctx.arc(dotX,H-pad.bottom+34,3.5,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle="rgba(0,0,0,.3)";ctx.lineWidth=0.5;ctx.stroke();
+    });
+
+    hitRegions.push({x0:cx-barW/2-4,x1:cx+barW/2+4,cx,boxTop:Math.max(0,boxTop-8),dn:d.dn,html:_rpdTooltipHtml(d,bestMedian)});
+  });
+
+  ctx.save();ctx.translate(12,pad.top+plotH/2);ctx.rotate(-Math.PI/2);
+  ctx.fillStyle=text2Col;ctx.font="10px -apple-system,sans-serif";ctx.textAlign="center";
+  ctx.fillText("Tur Suresi (s)",0,0);ctx.restore();
+
+  // Compound legend at bottom
+  const allComps=[...new Set(data.flatMap(d=>d.compoundSet))].filter(c=>c!=="?");
+  if(allComps.length){
+    let lx=pad.left;const ly=H-6;
+    ctx.font="bold 9px -apple-system,sans-serif";ctx.textAlign="left";
+    ctx.fillStyle=text2Col;ctx.fillText("LASTIK:",lx,ly);lx+=44;
+    allComps.forEach(c=>{
+      ctx.fillStyle=_rpdCompCol(c);
+      ctx.beginPath();ctx.arc(lx,ly-3,4,0,Math.PI*2);ctx.fill();
+      lx+=10;ctx.fillStyle=text2Col;ctx.fillText(c,lx,ly);lx+=ctx.measureText(c).width+12;
+    });
+  }
+
+  canvas._rpdHitRegions=hitRegions;
+  _rpdHoverHandler(canvas,"rpd-box-tooltip","box");
+}
+
+function drawRacePaceViolin(){
+  const canvas=document.getElementById("rpd-violin-canvas");
+  if(!canvas)return;
+  const ctx=canvas.getContext("2d");
+  const data=_getRpdDriverData();
+  if(!data.length){ctx.clearRect(0,0,canvas.width,canvas.height);canvas._rpdHitRegions=[];return;}
+
+  const dpr=window.devicePixelRatio||1;
+  const W=canvas.parentElement.clientWidth-20;
+  const H=360;
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  canvas.style.width=W+"px";canvas.style.height=H+"px";
+  ctx.scale(dpr,dpr);
+  ctx.clearRect(0,0,W,H);
+
+  const pad={top:20,right:20,bottom:70,left:60};
+  const plotW=W-pad.left-pad.right;
+  const plotH=H-pad.top-pad.bottom;
+  const n=data.length;
+  const slotW=Math.min(50,Math.max(16,(plotW/n)*0.7));
+  const gap=(plotW-slotW*n)/(n+1);
+
+  const allMin=Math.min(...data.map(d=>d.min))-0.3;
+  const allMax=Math.max(...data.map(d=>d.max))+0.3;
+  const yRange=allMax-allMin||1;
+  const yScale=v=>pad.top+plotH-(((v-allMin)/yRange)*plotH);
+
+  const cs=getComputedStyle(document.documentElement);
+  const borderCol=cs.getPropertyValue("--border").trim()||"#2e2e33";
+  const text2Col=cs.getPropertyValue("--text2").trim()||"#a1a1aa";
+
+  ctx.strokeStyle=borderCol;ctx.lineWidth=0.5;
+  const gridStep=_niceStep(yRange,6);
+  for(let v=Math.ceil(allMin/gridStep)*gridStep;v<=allMax;v+=gridStep){
+    const y=yScale(v);
+    ctx.beginPath();ctx.moveTo(pad.left,y);ctx.lineTo(W-pad.right,y);ctx.stroke();
+    ctx.fillStyle=text2Col;ctx.font="10px -apple-system,sans-serif";ctx.textAlign="right";
+    ctx.fillText(fmtTime(v),pad.left-6,y+3);
+  }
+
+  function kde(values,nBins,bandwidth){
+    const mn=Math.min(...values),mx=Math.max(...values);
+    const range=mx-mn||1;
+    const bw=bandwidth||range/Math.max(5,values.length*0.3);
+    const step=range/(nBins-1);
+    const pts=[];
+    for(let i=0;i<nBins;i++){
+      const x=mn+i*step;let density=0;
+      for(const v of values){const u=(x-v)/bw;density+=Math.exp(-0.5*u*u)/(bw*Math.sqrt(2*Math.PI));}
+      density/=values.length;pts.push({x,density});
+    }
+    const maxD=Math.max(...pts.map(p=>p.density))||1;
+    pts.forEach(p=>p.norm=p.density/maxD);
+    return pts;
+  }
+
+  const bestMedian=data[0]?.median||0;
+  const hitRegions=[];
+
+  data.forEach((d,i)=>{
+    const cx=pad.left+gap+(gap+slotW)*i+slotW/2;
+    const color=teamColor(d.team);
+    const halfW=slotW/2*0.85;
+    const pts=kde(d.sorted,40);
+
+    ctx.beginPath();
+    pts.forEach((p,j)=>{const y=yScale(p.x);const xOff=cx-halfW*p.norm;if(j===0)ctx.moveTo(xOff,y);else ctx.lineTo(xOff,y);});
+    for(let j=pts.length-1;j>=0;j--){const p=pts[j];ctx.lineTo(cx+halfW*p.norm,yScale(p.x));}
+    ctx.closePath();ctx.fillStyle=color+"25";ctx.fill();ctx.strokeStyle=color;ctx.lineWidth=1.2;ctx.stroke();
+
+    const bw=Math.max(4,halfW*0.3);
+    ctx.fillStyle=color+"50";ctx.fillRect(cx-bw/2,yScale(d.q3),bw,yScale(d.q1)-yScale(d.q3));
+
+    ctx.strokeStyle="#fff";ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(cx-bw/2-1,yScale(d.median));ctx.lineTo(cx+bw/2+1,yScale(d.median));ctx.stroke();
+
+    // Data points colored by compound
+    d.sorted.forEach((v,vi)=>{
+      const jitter=(Math.random()-0.5)*halfW*0.5;
+      const comp=(d.compSorted&&d.compSorted[vi])||"?";
+      ctx.fillStyle=_rpdCompCol(comp);ctx.globalAlpha=0.7;
+      ctx.beginPath();ctx.arc(cx+jitter,yScale(v),1.8,0,Math.PI*2);ctx.fill();
+      ctx.globalAlpha=1;
+    });
+
+    // Driver name
+    ctx.fillStyle=color;ctx.font="bold 10px -apple-system,sans-serif";ctx.textAlign="center";
+    ctx.fillText(d.acronym,cx,H-pad.bottom+14);
+    ctx.fillStyle=text2Col;ctx.font="8px -apple-system,sans-serif";
+    ctx.fillText(d.count+"T",cx,H-pad.bottom+24);
+
+    // Compound dots below driver name
+    const comps=d.compoundSet||[];
+    comps.forEach((c,ci)=>{
+      const dotX=cx-(comps.length-1)*5+ci*10;
+      ctx.fillStyle=_rpdCompCol(c);
+      ctx.beginPath();ctx.arc(dotX,H-pad.bottom+34,3.5,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle="rgba(0,0,0,.3)";ctx.lineWidth=0.5;ctx.stroke();
+    });
+
+    hitRegions.push({x0:cx-slotW/2-2,x1:cx+slotW/2+2,cx,boxTop:Math.max(0,yScale(d.q3)-8),dn:d.dn,html:_rpdTooltipHtml(d,bestMedian)});
+  });
+
+  ctx.save();ctx.translate(12,pad.top+plotH/2);ctx.rotate(-Math.PI/2);
+  ctx.fillStyle=text2Col;ctx.font="10px -apple-system,sans-serif";ctx.textAlign="center";
+  ctx.fillText("Tur Suresi (s)",0,0);ctx.restore();
+
+  // Compound legend at bottom
+  const allComps=[...new Set(data.flatMap(d=>d.compoundSet))].filter(c=>c!=="?");
+  if(allComps.length){
+    let lx=pad.left;const ly=H-6;
+    ctx.font="bold 9px -apple-system,sans-serif";ctx.textAlign="left";
+    ctx.fillStyle=text2Col;ctx.fillText("LASTIK:",lx,ly);lx+=44;
+    allComps.forEach(c=>{
+      ctx.fillStyle=_rpdCompCol(c);
+      ctx.beginPath();ctx.arc(lx,ly-3,4,0,Math.PI*2);ctx.fill();
+      lx+=10;ctx.fillStyle=text2Col;ctx.fillText(c,lx,ly);lx+=ctx.measureText(c).width+12;
+    });
+  }
+
+  canvas._rpdHitRegions=hitRegions;
+  _rpdHoverHandler(canvas,"rpd-violin-tooltip","violin");
+}
+
+function _niceStep(range,targetTicks){
+  const rough=range/targetTicks;
+  const mag=Math.pow(10,Math.floor(Math.log10(rough)));
+  const frac=rough/mag;
+  if(frac<=1.5)return mag;
+  if(frac<=3.5)return 2*mag;
+  if(frac<=7.5)return 5*mag;
+  return 10*mag;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   RACE PACE AI INSIGHTS — Claude/Gemini analysis of pace distribution
+   ══════════════════════════════════════════════════════════════════════════════ */
+function buildRacePaceDataSummary(){
+  const d=STATE.sessionData;if(!d)return"";
+  const drivers=d.drivers||{};
+  const stints=d.stints||[];
+  const allLaps=(d.laps||[]).filter(l=>l.lap_duration&&l.lap_duration>0);
+  if(!allLaps.length)return"";
+
+  const FUEL_EFFECT=0.10;
+  const totalRaceLaps=Math.max(...allLaps.map(l=>l.lap_number));
+  const midRaceLap=totalRaceLaps/2;
+
+  let summary=[];
+  summary.push("SESSION: "+(STATE.activeSession?.session_name||"Race"));
+  summary.push("CIRCUIT: "+(STATE.activeMeeting?.circuit_short_name||STATE.activeMeeting?.meeting_name||"Unknown"));
+  summary.push("TOTAL LAPS: "+totalRaceLaps);
+  summary.push("");
+
+  // Get both raw and FC stats
+  const rawData=[];
+  const fcData=[];
+
+  const driverLapsRaw={};
+  const driverLapsFc={};
+
+  stints.forEach(st=>{
+    const dn=st.driver_number;
+    const drv=drivers[dn]||{};
+    const stintLaps=allLaps.filter(l=>
+      l.driver_number===dn&&l.lap_number>=st.lap_start&&l.lap_number<=st.lap_end&&l.lap_duration>0
+    );
+    if(stintLaps.length<2)return;
+    stintLaps.sort((a,b)=>a.lap_number-b.lap_number);
+    const sorted=[...stintLaps].sort((a,b)=>a.lap_duration-b.lap_duration);
+    const median=sorted[Math.floor(sorted.length/2)].lap_duration;
+    const clean=stintLaps.filter(l=>l.lap_duration<median*1.07&&!l.is_pit_out_lap);
+    if(clean.length<3)return;
+
+    if(!driverLapsRaw[dn])driverLapsRaw[dn]={dn,acronym:drv.acronym||"#"+dn,fullName:drv.full_name||drv.acronym||"#"+dn,team:drv.team_name||drv.team||"",times:[],stints:[]};
+    if(!driverLapsFc[dn])driverLapsFc[dn]={dn,acronym:drv.acronym||"#"+dn,fullName:drv.full_name||drv.acronym||"#"+dn,team:drv.team_name||drv.team||"",times:[],stints:[]};
+
+    const compound=(st.compound||"?").toUpperCase();
+    const rawTimes=clean.map(l=>l.lap_duration);
+    const fcTimes=clean.map(l=>l.lap_duration-FUEL_EFFECT*(l.lap_number-midRaceLap));
+    const rawAvg=rawTimes.reduce((s,v)=>s+v,0)/rawTimes.length;
+    const fcAvg=fcTimes.reduce((s,v)=>s+v,0)/fcTimes.length;
+
+    driverLapsRaw[dn].times.push(...rawTimes);
+    driverLapsFc[dn].times.push(...fcTimes);
+    // Collect first3/last3 lap times for degradation analysis
+    const first3=clean.slice(0,3).map(l=>l.lap_duration);
+    const last3=clean.slice(-3).map(l=>l.lap_duration);
+    const f3Avg=first3.reduce((s,v)=>s+v,0)/first3.length;
+    const l3Avg=last3.reduce((s,v)=>s+v,0)/last3.length;
+    const degradation=l3Avg-f3Avg;
+    driverLapsRaw[dn].stints.push({stint:st.stint_number,compound,laps:clean.length,avg:rawAvg,lapStart:st.lap_start,lapEnd:st.lap_end,f3Avg,l3Avg,degradation});
+    driverLapsFc[dn].stints.push({stint:st.stint_number,compound,laps:clean.length,avg:fcAvg,lapStart:st.lap_start,lapEnd:st.lap_end});
+  });
+
+  function statsOf(arr){
+    const s=[...arr].sort((a,b)=>a-b);
+    const n=s.length;
+    if(!n)return null;
+    return{
+      min:s[0],q1:s[Math.floor(n*.25)],median:s[Math.floor(n*.5)],q3:s[Math.floor(n*.75)],max:s[n-1],
+      mean:s.reduce((a,b)=>a+b,0)/n,stdDev:Math.sqrt(s.reduce((a,v)=>a+Math.pow(v-s.reduce((x,y)=>x+y,0)/n,2),0)/n),
+      count:n
+    };
+  }
+
+  summary.push("===========================================================");
+  summary.push("RAW PACE DISTRIBUTION (sorted by median, fastest first)");
+  summary.push("===========================================================");
+  const rawDrivers=Object.values(driverLapsRaw).filter(d=>d.times.length>=3)
+    .map(d=>({...d,stats:statsOf(d.times)})).sort((a,b)=>a.stats.median-b.stats.median);
+  const bestRawMedian=rawDrivers[0]?.stats.median||0;
+  rawDrivers.forEach((d,i)=>{
+    const s=d.stats;
+    const gap=i===0?"FASTEST":`+${(s.median-bestRawMedian).toFixed(3)}s`;
+    summary.push(`P${i+1} ${d.fullName||d.acronym} [${d.acronym}] (${d.team}): Median ${fmtTime(s.median)} [${gap}] | Mean ${fmtTime(s.mean)} | Q1 ${fmtTime(s.q1)} Q3 ${fmtTime(s.q3)} | StdDev ${s.stdDev.toFixed(3)}s | ${s.count} laps`);
+    d.stints.forEach(st=>{
+      const degStr=st.degradation!=null?(st.degradation>0?"+":"")+st.degradation.toFixed(3)+"s":"";
+      const lapRange=st.lapStart&&st.lapEnd?` (L${st.lapStart}-L${st.lapEnd})`:"";
+      summary.push(`    S${st.stint} ${st.compound}${lapRange}: ${st.laps}L avg ${fmtTime(st.avg)} | first3avg ${fmtTime(st.f3Avg)} last3avg ${fmtTime(st.l3Avg)} deg: ${degStr}`);
+    });
+  });
+
+  summary.push("");
+  summary.push("===========================================================");
+  summary.push("FUEL-CORRECTED PACE DISTRIBUTION (normalized to mid-race lap "+Math.round(midRaceLap)+")");
+  summary.push("Fuel effect: 0.10 s/lap. Formula: corrected = lapTime - 0.10*(lapNum - "+Math.round(midRaceLap)+")");
+  summary.push("===========================================================");
+  const fcDrivers=Object.values(driverLapsFc).filter(d=>d.times.length>=3)
+    .map(d=>({...d,stats:statsOf(d.times)})).sort((a,b)=>a.stats.median-b.stats.median);
+  const bestFcMedian=fcDrivers[0]?.stats.median||0;
+  fcDrivers.forEach((d,i)=>{
+    const s=d.stats;
+    const gap=i===0?"FASTEST":`+${(s.median-bestFcMedian).toFixed(3)}s`;
+    summary.push(`P${i+1} ${d.fullName||d.acronym} [${d.acronym}] (${d.team}): FC Median ${fmtTime(s.median)} [${gap}] | Mean ${fmtTime(s.mean)} | Q1 ${fmtTime(s.q1)} Q3 ${fmtTime(s.q3)} | StdDev ${s.stdDev.toFixed(3)}s | ${s.count} laps`);
+    d.stints.forEach(st=>{
+      summary.push(`    S${st.stint} ${st.compound}: ${st.laps}L FC avg ${fmtTime(st.avg)}`);
+    });
+  });
+
+  summary.push("");
+  summary.push("===========================================================");
+  summary.push("KEY COMPARISONS");
+  summary.push("===========================================================");
+  // Biggest movers: raw vs FC ranking changes
+  if(rawDrivers.length>1&&fcDrivers.length>1){
+    summary.push("Ranking changes (Raw -> FC): drivers whose true pace differs most from raw:");
+    rawDrivers.forEach((rd,ri)=>{
+      const fi=fcDrivers.findIndex(f=>f.dn===rd.dn);
+      if(fi>=0&&fi!==ri){
+        const dir=fi<ri?"improved":"dropped";
+        summary.push(`  ${rd.acronym}: P${ri+1} raw -> P${fi+1} FC (${dir} ${Math.abs(fi-ri)} places)`);
+      }
+    });
+  }
+
+  // Consistency comparison
+  summary.push("");
+  summary.push("Consistency ranking (lowest std dev = most consistent):");
+  const byConsistency=[...fcDrivers].sort((a,b)=>a.stats.stdDev-b.stats.stdDev);
+  byConsistency.forEach((d,i)=>{
+    const rating=d.stats.stdDev<0.3?"Excellent":d.stats.stdDev<0.5?"Good":d.stats.stdDev<0.8?"Average":"Poor";
+    summary.push(`  ${i+1}. ${d.acronym}: stddev=${d.stats.stdDev.toFixed(3)}s [${rating}]`);
+  });
+
+  return summary.join("\n");
+}
+
+function openRacePaceAI(){
+  if(!STATE.sessionData){alert("Once seans verisini yukleyin");return;}
+  if(STATE.sessionType!=="race"&&STATE.sessionType!=="sprint"){alert("Yaris temposu AI analizi sadece yaris/sprint seanslari icin kullanilabilir");return;}
+
+  document.getElementById("ai-modal-overlay").classList.add("open");
+  document.getElementById("ai-body").innerHTML=`
+    <div style="padding:24px;text-align:center">
+      <p style="margin-bottom:16px;color:var(--text)">Yaris temposu dagilim analizi icin AI saglayici secin:</p>
+      <div style="display:flex;gap:12px;justify-content:center">
+        <button class="ai-btn" onclick="document.getElementById('ai-provider-select').value='gemini';startRacePaceAI()">Gemini</button>
+        <button class="ai-btn" style="background:#d97706" onclick="document.getElementById('ai-provider-select').value='claude';startRacePaceAI()">Claude</button>
+      </div>
+    </div>
+  `;
+}
+function startRacePaceAI(){
+  const prov=(document.getElementById('ai-provider-select')||{}).value||'gemini';
+  document.getElementById("ai-body").innerHTML=`
+    <div class="ai-loading">
+      <div class="ai-spinner"></div>
+      <span>${prov==='claude'?'Claude':'Gemini'} ile yaris temposu analiz ediliyor...</span>
+    </div>
+  `;
+  _aiConversation=[];
+  generateRacePaceAI();
+}
+async function generateRacePaceAI(){
+  if(_aiBusy)return;
+  _aiBusy=true;
+  const bodyEl=document.getElementById("ai-body");
+  try{
+    const paceData=buildRacePaceDataSummary();
+    if(!paceData||paceData.length<100)throw new Error("Analiz icin yeterli yaris temposu verisi yok");
+    _aiSessionInfo={
+      session_name:STATE.activeSession?.session_name||"Race",
+      circuit:STATE.activeMeeting?.circuit_short_name||STATE.activeMeeting?.meeting_name||"Unknown",
+      session_type:STATE.sessionType||"race",
+      year:getSelectedYear()
+    };
+    _aiComparisonData=paceData;
+    const provider=(document.getElementById('ai-provider-select')||{}).value||'gemini';
+    const r=await fetch("/api/telemetry/race_pace_analysis",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({session_info:_aiSessionInfo,pace_data:paceData,provider})
+    });
+    const data=await r.json();
+    if(!r.ok||data.error)throw new Error(data.message||data.error||"Analiz basarisiz oldu");
+    _aiAnalysis=data.analysis;
+    _aiConversation.push({role:"model",text:_aiAnalysis});
+    renderAIAnalysisWithChat();
+  }catch(e){
+    bodyEl.innerHTML=`<div class="ai-error">${esc(e.message)}</div>
+      <div style="margin-top:12px;display:flex;gap:8px">
+        <button class="ai-btn ai-btn-secondary" onclick="closeAIModal()">Kapat</button>
+        <button class="ai-btn" onclick="generateRacePaceAI()">&#128260; Tekrar Dene</button>
+      </div>`;
+  }
+  _aiBusy=false;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SCENARIO ANALYSIS — "What if?" race strategy analysis via Claude AI
+   ══════════════════════════════════════════════════════════════════════════════ */
+let _scenarioBusy=false;
+const _scenarioHistory=[];
+
+function buildScenarioContext(){
+  const d=STATE.sessionData;if(!d)return"";
+  const drivers=d.drivers||{};
+  const allLaps=(d.laps||[]).filter(l=>l.lap_duration&&l.lap_duration>0);
+  const stints=d.stints||[];
+  const rcMsgs=(d.race_control||[]).slice().sort((a,b)=>(a.date||"").localeCompare(b.date||""));
+  const positions=d.positions||[];
+  if(!allLaps.length)return"";
+
+  const totalLaps=Math.max(...allLaps.map(l=>l.lap_number));
+  const circuit=STATE.activeMeeting?.circuit_short_name||STATE.activeMeeting?.meeting_name||"?";
+  const sessionName=STATE.activeSession?.session_name||"Race";
+  const year=getSelectedYear();
+
+  let ctx=[];
+  ctx.push(`YARIS: ${year} ${circuit} - ${sessionName}`);
+  ctx.push(`TOPLAM TUR: ${totalLaps}`);
+  ctx.push("");
+
+  // --- RACE RESULT ---
+  ctx.push("=== YARIS SONUCU ===");
+  const driverNums=[...new Set(allLaps.map(l=>l.driver_number))];
+  // Final positions from position data
+  const finalPos={};
+  positions.forEach(p=>{
+    const dn=p.driver_number;
+    if(!finalPos[dn]||p.date>finalPos[dn].date)finalPos[dn]=p;
+  });
+  const resultList=driverNums.map(dn=>{
+    const drv=drivers[dn]||{};
+    const fp=finalPos[dn]?.position||99;
+    const lapCount=allLaps.filter(l=>l.driver_number===dn).length;
+    return{dn,acronym:drv.acronym||"#"+dn,fullName:drv.full_name||drv.acronym||"#"+dn,team:drv.team_name||drv.team||"",pos:fp,laps:lapCount};
+  }).sort((a,b)=>a.pos-b.pos);
+  resultList.forEach(r=>{
+    ctx.push(`  P${r.pos} ${r.fullName} [${r.acronym}] (${r.team}) - ${r.laps} tur`);
+  });
+
+  // --- GRID POSITIONS (lap 1 positions) ---
+  ctx.push("");
+  ctx.push("=== GRID / START POZISYONLARI ===");
+  const lap1Pos={};
+  positions.filter(p=>p.position!=null).forEach(p=>{
+    const dn=p.driver_number;
+    if(!lap1Pos[dn]||p.date<lap1Pos[dn].date)lap1Pos[dn]=p;
+  });
+  Object.entries(lap1Pos).sort((a,b)=>(a[1].position||99)-(b[1].position||99)).forEach(([dn,p])=>{
+    const drv=drivers[dn]||{};
+    ctx.push(`  P${p.position} ${drv.full_name||drv.acronym||"#"+dn} [${drv.acronym||"#"+dn}]`);
+  });
+
+  // --- PIT STOPS ---
+  ctx.push("");
+  ctx.push("=== PIT STOPLARI & LASTIK STRATEJILERI ===");
+  const stintByDriver={};
+  stints.forEach(s=>{
+    const dn=s.driver_number;
+    if(!stintByDriver[dn])stintByDriver[dn]=[];
+    stintByDriver[dn].push(s);
+  });
+  Object.entries(stintByDriver).sort((a,b)=>{
+    const aPos=finalPos[a[0]]?.position||99;
+    const bPos=finalPos[b[0]]?.position||99;
+    return aPos-bPos;
+  }).forEach(([dn,sts])=>{
+    const drv=drivers[dn]||{};
+    sts.sort((a,b)=>(a.stint_number||0)-(b.stint_number||0));
+    const stintStr=sts.map(s=>{
+      const comp=(s.compound||"?").toUpperCase();
+      const fresh=s.tyre_age_at_start===0||s.tyre_age_at_start==null;
+      return`S${s.stint_number}: ${comp}${fresh?"(new)":"(used)"} L${s.lap_start||"?"}-L${s.lap_end||"?"}`;
+    }).join(" -> ");
+    // Calculate pit stop laps
+    const pitLaps=sts.slice(1).map(s=>s.lap_start?`L${s.lap_start}`:"?").join(", ");
+    ctx.push(`  ${drv.full_name||drv.acronym||"#"+dn} [${drv.acronym||"#"+dn}]: ${stintStr} | Pit: ${pitLaps||"none"}`);
+  });
+
+  // --- SC/VSC/RED FLAG WINDOWS ---
+  ctx.push("");
+  ctx.push("=== GUVENLIK ARACI / VSC / KIRMIZI BAYRAK PENCERELERI ===");
+  let scWindows=[];
+  let scActive=false,scStart=null,vscActive=false,vscStart=null,redActive=false,redStart=null;
+  rcMsgs.forEach(msg=>{
+    const cat=(msg.category||"").toLowerCase();
+    const m=(msg.message||"").toUpperCase();
+    const lap=msg.lap_number;
+    const time=msg.date?new Date(msg.date).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"}):"";
+    // SC
+    if(cat==="safetycar"&&!m.includes("IN THIS LAP")&&!scActive){scActive=true;scStart={lap,time};}
+    if(cat==="safetycar"&&m.includes("IN THIS LAP")&&scActive){
+      scWindows.push({type:"SC",startLap:scStart?.lap,endLap:lap,startTime:scStart?.time,endTime:time});
+      scActive=false;scStart=null;
+    }
+    // VSC
+    if(cat.includes("virtual")&&!m.includes("ENDING")&&!vscActive){vscActive=true;vscStart={lap,time};}
+    if(cat.includes("virtual")&&m.includes("ENDING")&&vscActive){
+      scWindows.push({type:"VSC",startLap:vscStart?.lap,endLap:lap,startTime:vscStart?.time,endTime:time});
+      vscActive=false;vscStart=null;
+    }
+    // RED
+    if((msg.flag||"").toUpperCase()==="RED"&&!redActive){redActive=true;redStart={lap,time};}
+    if((msg.flag||"").toUpperCase()==="GREEN"&&redActive){
+      scWindows.push({type:"RED_FLAG",startLap:redStart?.lap,endLap:lap,startTime:redStart?.time,endTime:time});
+      redActive=false;redStart=null;
+    }
+  });
+  // Close any still-active windows
+  if(scActive)scWindows.push({type:"SC",startLap:scStart?.lap,endLap:totalLaps,startTime:scStart?.time,endTime:"race_end"});
+  if(vscActive)scWindows.push({type:"VSC",startLap:vscStart?.lap,endLap:totalLaps,startTime:vscStart?.time,endTime:"race_end"});
+
+  if(scWindows.length){
+    scWindows.forEach((w,i)=>{
+      ctx.push(`  ${i+1}. ${w.type}: Tur ${w.startLap||"?"} - Tur ${w.endLap||"?"} (${w.startTime||""} -> ${w.endTime||""})`);
+      // Which drivers pitted during this window?
+      const pitters=[];
+      Object.entries(stintByDriver).forEach(([dn,sts])=>{
+        sts.forEach(s=>{
+          if(s.lap_start&&w.startLap&&w.endLap&&s.lap_start>=w.startLap&&s.lap_start<=w.endLap+1){
+            const drv=drivers[dn]||{};
+            pitters.push(`${drv.acronym||"#"+dn}(L${s.lap_start})`);
+          }
+        });
+      });
+      if(pitters.length)ctx.push(`     Pit yapanlar: ${pitters.join(", ")}`);
+      else ctx.push(`     Pit yapan yok`);
+    });
+  }else{
+    ctx.push("  SC/VSC/Kirmizi bayrak yok bu yarista.");
+  }
+
+  // --- KEY RACE CONTROL MESSAGES ---
+  ctx.push("");
+  ctx.push("=== ONEMLI YARIS KONTROL MESAJLARI ===");
+  const importantCats=["safetycar","virtualSafetyCar","Flag"];
+  rcMsgs.filter(msg=>{
+    const cat=(msg.category||"").toLowerCase();
+    const flag=(msg.flag||"").toUpperCase();
+    return cat==="safetycar"||cat.includes("virtual")||flag==="RED"||flag==="GREEN"||
+           (msg.message||"").toUpperCase().includes("DRS");
+  }).forEach(msg=>{
+    const time=msg.date?new Date(msg.date).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"}):"";
+    const lap=msg.lap_number?"L"+msg.lap_number:"";
+    ctx.push(`  ${time} ${lap}: ${(msg.message||"").substring(0,120)}`);
+  });
+
+  // --- LAP-BY-LAP PACE FOR TOP DRIVERS ---
+  ctx.push("");
+  ctx.push("=== TUR-TUR SURELERI (Ilk 10 pilot) ===");
+  const top10=resultList.slice(0,10);
+  top10.forEach(r=>{
+    const dLaps=allLaps.filter(l=>l.driver_number===r.dn).sort((a,b)=>a.lap_number-b.lap_number);
+    const lapStr=dLaps.map(l=>`L${l.lap_number}:${l.lap_duration>0?l.lap_duration.toFixed(3):"PIT"}`).join(" ");
+    ctx.push(`  ${r.acronym}: ${lapStr}`);
+  });
+
+  // --- POSITION CHANGES AT KEY MOMENTS ---
+  ctx.push("");
+  ctx.push("=== POZISYON DEGISIMLERI (SC/VSC turlari) ===");
+  scWindows.forEach(w=>{
+    if(!w.startLap)return;
+    ctx.push(`  ${w.type} oncesi (L${w.startLap}):`);
+    // Get positions at SC start lap
+    const posAtLap={};
+    positions.forEach(p=>{
+      if(p.position!=null){
+        const pLap=allLaps.find(l=>l.driver_number===p.driver_number&&l.date_start&&p.date>=l.date_start);
+        // Approximate: use positions just before/at SC lap
+      }
+    });
+    // Simpler approach: use lap data position
+    const beforeLaps=allLaps.filter(l=>l.lap_number===w.startLap&&l.position!=null).sort((a,b)=>(a.position||99)-(b.position||99));
+    if(beforeLaps.length){
+      beforeLaps.forEach(l=>{
+        const drv=drivers[l.driver_number]||{};
+        ctx.push(`    P${l.position} ${drv.acronym||"#"+l.driver_number}`);
+      });
+    }
+    if(w.endLap){
+      ctx.push(`  ${w.type} sonrasi (L${w.endLap}):`);
+      const afterLaps=allLaps.filter(l=>l.lap_number===w.endLap&&l.position!=null).sort((a,b)=>(a.position||99)-(b.position||99));
+      afterLaps.forEach(l=>{
+        const drv=drivers[l.driver_number]||{};
+        ctx.push(`    P${l.position} ${drv.acronym||"#"+l.driver_number}`);
+      });
+    }
+  });
+
+  // --- GAP DATA ---
+  ctx.push("");
+  ctx.push("=== ARALIK VERILERI (Son turlar arasi farklar) ===");
+  const lastLapNum=totalLaps;
+  const lastLapData=allLaps.filter(l=>l.lap_number===lastLapNum&&l.position!=null).sort((a,b)=>(a.position||99)-(b.position||99));
+  if(lastLapData.length>=2){
+    const leaderTime=lastLapData[0]?.lap_duration;
+    lastLapData.forEach((l,i)=>{
+      const drv=drivers[l.driver_number]||{};
+      const gap=l.gap_to_leader!=null?`+${l.gap_to_leader}s`:(l.interval_to_position_ahead!=null?`+${l.interval_to_position_ahead}s int`:"");
+      ctx.push(`  P${l.position} ${drv.acronym||"#"+l.driver_number} ${gap}`);
+    });
+  }
+
+  return ctx.join("\n");
+}
+
+function buildScenarioSuggestions(){
+  const el=document.getElementById("scenario-suggestions");
+  if(!el)return;
+  const d=STATE.sessionData;if(!d){el.innerHTML="";return;}
+  const drivers=d.drivers||{};
+  const stints=d.stints||[];
+  const rcMsgs=d.race_control||[];
+
+  // Detect SC/VSC windows
+  const hasSC=rcMsgs.some(m=>(m.category||"").toLowerCase()==="safetycar");
+  const hasVSC=rcMsgs.some(m=>(m.category||"").toLowerCase().includes("virtual"));
+
+  // Detect teams
+  const teams=new Set();
+  Object.values(drivers).forEach(drv=>{if(drv.team_name)teams.add(drv.team_name);});
+
+  const suggestions=[];
+  if(hasSC||hasVSC){
+    const scType=hasSC?"SC":"VSC";
+    // Find teams that didn't pit during SC/VSC
+    suggestions.push({text:`${scType} penceresinde pit yapmayan takimlar farkli bir strateji izleseydi ne olurdu?`,icon:"🔄"});
+  }
+  if(hasSC)suggestions.push({text:"SC sonrasi restart'ta farkli bir pozisyon mucadelesi olsaydi sonuc degisir miydi?",icon:"🏁"});
+
+  // Top team scenarios
+  const topTeams=["Ferrari","McLaren","Red Bull Racing","Mercedes"];
+  topTeams.forEach(t=>{
+    if(teams.has(t)){
+      const teamDrivers=Object.values(drivers).filter(dr=>dr.team_name===t);
+      if(teamDrivers.length>=2){
+        suggestions.push({text:`${t} pilotlari yer degistirseydi (strateji swap) sonuc nasil degisirdi?`,icon:"🔀"});
+      }
+    }
+  });
+
+  if(hasSC||hasVSC)suggestions.push({text:"SC/VSC olmadan yaris devam etseydi sonuc nasil degisirdi?",icon:"💨"});
+  suggestions.push({text:"Undercut ve overcut firsatlari dogru kullanildi mi? Kim kacirilmis firsatlar birakti?",icon:"⏱️"});
+
+  // Limit to 4 suggestions
+  let html="";
+  suggestions.slice(0,4).forEach(s=>{
+    html+=`<button class="rpd-toggle" onclick="document.getElementById('scenario-question').value='${s.text.replace(/'/g,"\\'")}';" style="font-size:10px;padding:4px 8px;text-align:left">${s.icon} ${esc(s.text.substring(0,60))}${s.text.length>60?"...":""}</button>`;
+  });
+  el.innerHTML=html;
+}
+
+async function runScenarioAnalysis(){
+  if(_scenarioBusy)return;
+  const question=(document.getElementById("scenario-question")?.value||"").trim();
+  if(!question){alert("Lutfen bir senaryo sorusu girin.");return;}
+  if(!STATE.sessionData){alert("Once seans verisini yukleyin.");return;}
+
+  _scenarioBusy=true;
+  const btn=document.getElementById("scenario-run-btn");
+  const resultEl=document.getElementById("scenario-result");
+  if(btn){btn.disabled=true;btn.textContent="⏳ Analiz ediliyor...";}
+  resultEl.innerHTML=`<div style="padding:16px;text-align:center;color:var(--text2)"><div class="ai-spinner" style="margin:0 auto 8px"></div>Claude AI senaryo analizi yapiyor...</div>`;
+
+  try{
+    const raceContext=buildScenarioContext();
+    if(!raceContext||raceContext.length<200)throw new Error("Yeterli yaris verisi yok");
+
+    const r=await fetch("/api/telemetry/scenario_analysis",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        session_info:{
+          session_name:STATE.activeSession?.session_name||"Race",
+          circuit:STATE.activeMeeting?.circuit_short_name||STATE.activeMeeting?.meeting_name||"?",
+          session_type:STATE.sessionType||"race",
+          year:getSelectedYear()
+        },
+        race_context:raceContext,
+        question:question
+      })
+    });
+    const data=await r.json();
+    if(!r.ok||data.error)throw new Error(data.error||"Analiz basarisiz");
+
+    // Render result
+    const analysis=data.analysis||"";
+    const html=`<div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:12px;line-height:1.7;color:var(--text)">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border)">
+        <span style="font-size:14px">🎯</span>
+        <strong style="color:var(--purple)">Senaryo Analizi</strong>
+        <span style="font-size:10px;color:var(--text2);margin-left:auto">Claude AI</span>
+      </div>
+      <div style="font-size:11px;color:var(--text2);margin-bottom:8px;font-style:italic;border-left:2px solid var(--purple);padding-left:8px">${esc(question)}</div>
+      <div class="ai-markdown">${renderMarkdown(analysis)}</div>
+    </div>`;
+    resultEl.innerHTML=html;
+
+    // Save to history
+    _scenarioHistory.unshift({question,analysis,time:new Date().toLocaleTimeString()});
+    renderScenarioHistory();
+  }catch(e){
+    resultEl.innerHTML=`<div style="padding:12px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:6px;color:var(--accent);font-size:12px">${esc(e.message)}</div>`;
+  }
+
+  _scenarioBusy=false;
+  if(btn){btn.disabled=false;btn.innerHTML="&#129302; Analiz Et";}
+}
+
+function renderScenarioHistory(){
+  const el=document.getElementById("scenario-history");
+  if(!el||!_scenarioHistory.length)return;
+  if(_scenarioHistory.length<=1){el.innerHTML="";return;}
+  let html=`<details style="margin-top:8px"><summary style="font-size:11px;color:var(--purple);cursor:pointer;font-weight:700">&#128218; Onceki Senaryolar (${_scenarioHistory.length-1})</summary>`;
+  _scenarioHistory.slice(1).forEach((h,i)=>{
+    html+=`<div style="margin-top:8px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:11px">
+      <div style="color:var(--text2);font-style:italic;margin-bottom:6px;border-left:2px solid var(--border);padding-left:6px">${esc(h.question)}</div>
+      <div class="ai-markdown" style="font-size:11px">${renderMarkdown(h.analysis)}</div>
+      <div style="font-size:9px;color:var(--text2);text-align:right;margin-top:4px">${h.time}</div>
+    </div>`;
+  });
+  html+=`</details>`;
+  el.innerHTML=html;
+}
+
 function renderRaceDashboard(){
   const wrap=document.getElementById("rd-table-wrap");
   if(!wrap)return;
@@ -2434,7 +4793,12 @@ function renderRaceDashboard(){
   const slMax=document.getElementById("rd-range-max");
   if(slMin&&slMax){
     slMin.max=globalMaxLap;slMax.max=globalMaxLap;
-    if(STATE.rdLapMax==null||STATE.rdLapMax>globalMaxLap)STATE.rdLapMax=globalMaxLap;
+    if(STATE.rdLapMax==null||STATE.rdLapMax>globalMaxLap){
+      STATE.rdLapMax=globalMaxLap;
+    }else if(!STATE.rdRangeManual){
+      // Auto-follow: always track the latest lap when user hasn't manually adjusted
+      STATE.rdLapMax=globalMaxLap;
+    }
     if(STATE.rdLapMin>STATE.rdLapMax)STATE.rdLapMin=1;
     slMin.value=STATE.rdLapMin;slMax.value=STATE.rdLapMax;
     const lbl=document.getElementById("rd-range-label");
@@ -4147,7 +6511,7 @@ function initTvmEvents(){
 }
 
 // Legacy compat — called from setQualiPhase and setDriverFilter
-function drawSpeedScatter(){renderSpeedRankings();drawTopVsMean();}
+function drawSpeedScatter(){renderSpeedRankings();drawTopVsMean();renderSpeedHeatmap();}
 
 /* ══════════════════════════════════════════════════════════════════════════════
    DRIVING PHASES CHART (Braking / Neutral / Partial / Max Throttle)
@@ -4225,28 +6589,295 @@ function renderDrivingPhases(){
   const wrap=document.getElementById("driving-phases-wrap");
   if(!wrap||!STATE._drivingPhases)return;
   const phases=STATE._drivingPhases;
-  
-  const barH=22,gap=3,padL=70,padR=50;
-  const H=phases.length*(barH+gap)+20;
-  
-  let html=`<div style="position:relative;height:${H}px;overflow:hidden">`;
-  
+
+  // Find best (max) WOT and min braking for highlighting
+  const bestWOT=Math.max(...phases.map(p=>p.maxThrottle));
+  const minBrake=Math.min(...phases.map(p=>p.braking));
+
+  let html=`<table style="width:100%;border-collapse:collapse;font-size:11px">`;
+  html+=`<thead><tr style="border-bottom:2px solid var(--border);font-size:10px;color:var(--text2);text-align:center">`;
+  html+=`<th style="text-align:left;padding:4px 8px;width:60px">Pilot</th>`;
+  html+=`<th style="padding:4px 6px;width:48px">Lap</th>`;
+  html+=`<th style="padding:4px 4px;min-width:220px">Dagilim</th>`;
+  html+=`<th style="padding:4px 6px;width:52px;color:#e74c3c">Fren</th>`;
+  html+=`<th style="padding:4px 6px;width:52px;color:#888">Notr</th>`;
+  html+=`<th style="padding:4px 6px;width:52px;color:#f1c40f">Kismi</th>`;
+  html+=`<th style="padding:4px 6px;width:52px;color:#2ecc71">WOT</th>`;
+  html+=`</tr></thead><tbody>`;
+
   phases.forEach((p,i)=>{
-    const y=i*(barH+gap)+4;
     const col=teamColor(p.team)||"#888";
-    const brW=p.braking,neW=p.neutral,paW=p.partial,mxW=p.maxThrottle;
-    
-    html+=`<div style="position:absolute;left:0;top:${y}px;width:${padL-4}px;text-align:right;font-size:10px;font-weight:700;color:${col};line-height:${barH}px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${p.acronym} - ${fmtTime(p.lapTime)}">${p.acronym}</div>`;
-    html+=`<div style="position:absolute;left:${padL}px;top:${y}px;right:${padR}px;height:${barH}px;display:flex;border-radius:3px;overflow:hidden">`;
-    html+=`<div style="width:${brW}%;background:#e74c3c;height:100%" title="Braking: ${brW.toFixed(1)}%"></div>`;
-    html+=`<div style="width:${neW}%;background:#555;height:100%" title="Neutral: ${neW.toFixed(1)}%"></div>`;
-    html+=`<div style="width:${paW}%;background:#f1c40f;height:100%" title="Partial: ${paW.toFixed(1)}%"></div>`;
-    html+=`<div style="width:${mxW}%;background:#2ecc71;height:100%" title="Max Throttle: ${mxW.toFixed(1)}%"></div>`;
-    html+=`</div>`;
-    html+=`<div style="position:absolute;right:0;top:${y}px;width:${padR-4}px;text-align:left;font-size:9px;color:var(--text2);line-height:${barH}px">${mxW.toFixed(0)}% WOT</div>`;
+    const isTopWOT=Math.abs(p.maxThrottle-bestWOT)<0.05;
+    const isMinBrake=Math.abs(p.braking-minBrake)<0.05;
+    const rowBg=i%2===0?"transparent":"rgba(255,255,255,.02)";
+    html+=`<tr style="background:${rowBg};border-bottom:1px solid var(--border)">`;
+    // Driver name
+    html+=`<td style="padding:5px 8px;font-weight:700;color:${col};white-space:nowrap">${esc(p.acronym)}</td>`;
+    // Best lap time
+    html+=`<td style="padding:5px 6px;text-align:center;color:var(--text2);font-size:10px;font-family:monospace">${fmtTime(p.lapTime)}</td>`;
+    // Stacked bar
+    html+=`<td style="padding:5px 4px"><div style="display:flex;height:20px;border-radius:3px;overflow:hidden;position:relative">`;
+    // Braking segment
+    if(p.braking>2)html+=`<div style="width:${p.braking}%;background:#e74c3c;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#fff;min-width:0;overflow:hidden">${p.braking>=8?p.braking.toFixed(0)+"%":""}</div>`;
+    else html+=`<div style="width:${p.braking}%;background:#e74c3c"></div>`;
+    // Neutral segment
+    if(p.neutral>2)html+=`<div style="width:${p.neutral}%;background:#555;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:600;color:#ccc;min-width:0;overflow:hidden">${p.neutral>=6?p.neutral.toFixed(0)+"%":""}</div>`;
+    else html+=`<div style="width:${p.neutral}%;background:#555"></div>`;
+    // Partial throttle segment
+    if(p.partial>2)html+=`<div style="width:${p.partial}%;background:#f1c40f;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#222;min-width:0;overflow:hidden">${p.partial>=8?p.partial.toFixed(0)+"%":""}</div>`;
+    else html+=`<div style="width:${p.partial}%;background:#f1c40f"></div>`;
+    // Max throttle segment
+    html+=`<div style="width:${p.maxThrottle}%;background:#2ecc71;display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:700;color:#111;min-width:0;overflow:hidden">${p.maxThrottle>=12?p.maxThrottle.toFixed(0)+"%":""}</div>`;
+    html+=`</div></td>`;
+    // Percentage columns
+    html+=`<td style="padding:5px 6px;text-align:center;font-family:monospace;font-size:10px;color:#e74c3c;${isMinBrake?"font-weight:700;text-decoration:underline":""}">${p.braking.toFixed(1)}%</td>`;
+    html+=`<td style="padding:5px 6px;text-align:center;font-family:monospace;font-size:10px;color:#999">${p.neutral.toFixed(1)}%</td>`;
+    html+=`<td style="padding:5px 6px;text-align:center;font-family:monospace;font-size:10px;color:#f1c40f">${p.partial.toFixed(1)}%</td>`;
+    html+=`<td style="padding:5px 6px;text-align:center;font-family:monospace;font-size:10px;color:#2ecc71;${isTopWOT?"font-weight:700;text-decoration:underline":""}">${p.maxThrottle.toFixed(1)}%</td>`;
+    html+=`</tr>`;
   });
-  
+
+  html+=`</tbody></table>`;
+  // Insight note
+  const avgWOT=(phases.reduce((s,p)=>s+p.maxThrottle,0)/phases.length).toFixed(1);
+  const avgBrake=(phases.reduce((s,p)=>s+p.braking,0)/phases.length).toFixed(1);
+  html+=`<div style="font-size:10px;color:var(--text2);margin-top:6px;padding:4px 8px;border-top:1px solid var(--border)">`;
+  html+=`Ortalama WOT: <strong style="color:#2ecc71">${avgWOT}%</strong> &nbsp;|&nbsp; Ortalama Fren: <strong style="color:#e74c3c">${avgBrake}%</strong>`;
+  html+=`&nbsp;|&nbsp; <span style="font-size:9px">WOT = Tam gaz (Wide Open Throttle, ≥95%), Kismi = %5-95 gaz, Notr = gaz/fren yok, Fren = fren aktif</span>`;
   html+=`</div>`;
+  wrap.innerHTML=html;
+}
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   SPEED HEATMAP — Top Speed per Driver per Lap (color-coded grid)
+   ══════════════════════════════════════════════════════════════════════════════ */
+let _telemTopSpeedCache={};  // session_key -> {dn: [{lap_number, top_speed}]}
+let _telemTopSpeedLoading=false;
+
+function loadSpeedHeatmap(){
+  const srcSel=document.getElementById("heatmap-speed-src");
+  const speedSrc=(srcSel?srcSel.value:"max");
+  if(speedSrc==="telemetry"){
+    loadTelemetryTopSpeeds();
+  }else{
+    renderSpeedHeatmap();
+  }
+}
+
+async function loadTelemetryTopSpeeds(){
+  const wrap=document.getElementById("speed-heatmap-wrap");
+  if(!wrap)return;
+  const d=STATE.sessionData;if(!d){wrap.innerHTML="";return;}
+  const sk=STATE.activeSession?.session_key;
+  if(!sk){wrap.innerHTML='<div style="color:var(--text2);padding:8px;font-size:11px">No session key</div>';return;}
+  const drivers=d.drivers||{};
+  const allLaps=(d.laps||[]).filter(l=>l.lap_duration&&l.lap_duration>0&&l.date_start);
+
+  // Check cache
+  if(_telemTopSpeedCache[sk]&&Object.keys(_telemTopSpeedCache[sk]).length>0){
+    renderSpeedHeatmap(_telemTopSpeedCache[sk]);
+    return;
+  }
+
+  if(_telemTopSpeedLoading)return;
+  _telemTopSpeedLoading=true;
+
+  // Get unique driver numbers
+  const driverNums=[...new Set(allLaps.map(l=>l.driver_number))];
+
+  wrap.innerHTML=`<div style="padding:12px;color:var(--text2);font-size:11px"><div class="ai-spinner" style="width:14px;height:14px;display:inline-block;margin-right:6px"></div>Telemetri verisi yukleniyor (0/${driverNums.length} pilot)...</div>`;
+
+  const telemData={};
+  let done=0;
+
+  for(const dn of driverNums){
+    try{
+      // Build laps JSON for this driver
+      const driverLaps=allLaps.filter(l=>l.driver_number===dn).map(l=>({
+        lap_number:l.lap_number,
+        date_start:l.date_start,
+        lap_duration:l.lap_duration
+      }));
+      if(!driverLaps.length)continue;
+      const lapsParam=JSON.stringify(driverLaps);
+      const url=`/api/test_telemetry/top_speeds?session_key=${sk}&driver_number=${dn}&laps=${encodeURIComponent(lapsParam)}`;
+      const r=await fetch(url);
+      const data=await r.json();
+      if(Array.isArray(data)&&data.length>0){
+        telemData[dn]=data;
+      }
+    }catch(e){console.warn("Top speed fetch error for driver",dn,e);}
+    done++;
+    wrap.innerHTML=`<div style="padding:12px;color:var(--text2);font-size:11px"><div class="ai-spinner" style="width:14px;height:14px;display:inline-block;margin-right:6px"></div>Telemetri verisi yukleniyor (${done}/${driverNums.length} pilot)...</div>`;
+  }
+
+  _telemTopSpeedCache[sk]=telemData;
+  _telemTopSpeedLoading=false;
+  renderSpeedHeatmap(telemData);
+}
+
+function renderSpeedHeatmap(telemOverride){
+  const wrap=document.getElementById("speed-heatmap-wrap");
+  if(!wrap)return;
+  const d=STATE.sessionData;if(!d){wrap.innerHTML="";return;}
+  const drivers=d.drivers||{};
+  const laps=getProcessedLaps();
+  if(!laps.length){wrap.innerHTML='<div style="color:var(--text2);padding:8px;font-size:11px">Hiz verisi yok</div>';return;}
+
+  const srcSel=document.getElementById("heatmap-speed-src");
+  const cntSel=document.getElementById("heatmap-lap-count");
+  const speedSrc=(srcSel?srcSel.value:"max");
+  const lapLimit=cntSel?parseInt(cntSel.value)||0:15;
+
+  // If telemetry mode but no data loaded yet, show prompt
+  if(speedSrc==="telemetry"&&!telemOverride){
+    const sk=STATE.activeSession?.session_key;
+    if(_telemTopSpeedCache[sk]&&Object.keys(_telemTopSpeedCache[sk]).length>0){
+      telemOverride=_telemTopSpeedCache[sk];
+    }else{
+      wrap.innerHTML='<div style="color:var(--text2);padding:8px;font-size:11px">Telemetri verisini yuklemek icin "Telemetry (Full Circuit)" secenegini secin.</div>';
+      return;
+    }
+  }
+
+  // Build speed data per driver per lap
+  const byDriver={};
+
+  if(speedSrc==="telemetry"&&telemOverride){
+    // Use telemetry-derived top speeds
+    const filteredDNs=new Set(laps.map(l=>l.driver_number));
+    Object.entries(telemOverride).forEach(([dn,lapSpeeds])=>{
+      const dnNum=Number(dn);
+      if(!filteredDNs.has(dnNum))return;
+      lapSpeeds.forEach(ls=>{
+        if(ls.top_speed<=0)return;
+        if(!byDriver[dnNum])byDriver[dnNum]=[];
+        byDriver[dnNum].push({lap:ls.lap_number,speed:ls.top_speed});
+      });
+    });
+  }else{
+    // Use lap-level speed trap data
+    function getSpeed(l){
+      if(speedSrc==="st")return l.st_speed||0;
+      if(speedSrc==="i1")return l.i1_speed||0;
+      if(speedSrc==="i2")return l.i2_speed||0;
+      return Math.max(l.st_speed||0,l.i1_speed||0,l.i2_speed||0);
+    }
+    laps.forEach(l=>{
+      const dn=l.driver_number;
+      const spd=getSpeed(l);
+      if(spd<=0)return;
+      if(!byDriver[dn])byDriver[dn]=[];
+      byDriver[dn].push({lap:l.lap_number,speed:spd});
+    });
+  }
+
+  // For each driver: sort laps by speed desc, take top N, compute average
+  const driverRows=[];
+  Object.entries(byDriver).forEach(([dn,lapSpeeds])=>{
+    if(lapSpeeds.length<2)return;
+    lapSpeeds.sort((a,b)=>b.speed-a.speed);
+    const maxSpd=lapSpeeds[0].speed;
+    const selected=lapLimit>0?lapSpeeds.slice(0,lapLimit):lapSpeeds;
+    const avg=selected.reduce((s,l)=>s+l.speed,0)/selected.length;
+    const drv=drivers[dn]||{};
+    driverRows.push({
+      dn:Number(dn),
+      acronym:drv.acronym||"#"+dn,
+      team:drv.team_name||drv.team||"",
+      maxSpeed:maxSpd,
+      avg:avg,
+      laps:selected
+    });
+  });
+
+  if(!driverRows.length){wrap.innerHTML='<div style="color:var(--text2);padding:8px;font-size:11px">Hiz verisi yok</div>';return;}
+
+  // Sort by max speed descending
+  driverRows.sort((a,b)=>b.maxSpeed-a.maxSpeed);
+
+  // Find global min/max for color scale
+  let globalMin=Infinity,globalMax=0;
+  driverRows.forEach(r=>{
+    r.laps.forEach(l=>{
+      if(l.speed<globalMin)globalMin=l.speed;
+      if(l.speed>globalMax)globalMax=l.speed;
+    });
+    if(r.avg<globalMin)globalMin=r.avg;
+  });
+  const range=globalMax-globalMin||1;
+
+  // Determine column count (max laps shown across all drivers)
+  const maxCols=Math.max(...driverRows.map(r=>r.laps.length));
+
+  // Color interpolation: purple (low) -> orange/red (high) — like the reference image
+  function heatColor(val){
+    const t=Math.max(0,Math.min(1,(val-globalMin)/range));
+    const stops=[
+      [0,   59,7,100],     // #3b0764 deep purple
+      [0.2, 126,34,206],   // #7e22ce purple
+      [0.4, 190,24,93],    // #be185d magenta
+      [0.6, 234,88,12],    // #ea580c orange
+      [0.8, 245,158,11],   // #f59e0b amber
+      [1.0, 253,224,71]    // #fde047 yellow
+    ];
+    let i=0;
+    for(;i<stops.length-1;i++){if(t<=stops[i+1][0])break;}
+    const [t0,r0,g0,b0]=stops[i];
+    const [t1,r1,g1,b1]=stops[Math.min(i+1,stops.length-1)];
+    const f=(t-t0)/(t1-t0||1);
+    const r=Math.round(r0+(r1-r0)*f);
+    const g=Math.round(g0+(g1-g0)*f);
+    const b=Math.round(b0+(b1-b0)*f);
+    return`rgb(${r},${g},${b})`;
+  }
+  function textColor(val){
+    const t=(val-globalMin)/range;
+    return t>0.55?"#000":"#fff";
+  }
+
+  // Build table HTML
+  const cellW=40;
+  let html=`<table style="border-collapse:collapse;font-size:10px;font-family:monospace;white-space:nowrap">`;
+  // Header row
+  html+=`<thead><tr>`;
+  html+=`<th style="padding:3px 8px;text-align:left;font-size:10px;color:var(--text2);position:sticky;left:0;background:var(--surface);z-index:2"></th>`;
+  for(let c=0;c<maxCols;c++){
+    html+=`<th style="padding:3px 2px;text-align:center;font-size:9px;color:var(--text2);min-width:${cellW}px">${c+1}</th>`;
+  }
+  html+=`<th style="padding:3px 8px;text-align:center;font-size:9px;color:var(--yellow);border-left:2px solid var(--yellow);min-width:${cellW}px;font-weight:700">AVG</th>`;
+  html+=`</tr></thead><tbody>`;
+
+  driverRows.forEach((row,ri)=>{
+    const col=teamColor(row.team)||"#888";
+    const rowBg=ri%2===0?"transparent":"rgba(255,255,255,.015)";
+    html+=`<tr style="background:${rowBg}">`;
+    html+=`<td style="padding:3px 8px;font-weight:700;color:${col};font-size:11px;position:sticky;left:0;background:var(--surface);z-index:1;border-right:1px solid var(--border)">${esc(row.acronym)}</td>`;
+    for(let c=0;c<maxCols;c++){
+      if(c<row.laps.length){
+        const spd=row.laps[c].speed;
+        const bg=heatColor(spd);
+        const fg=textColor(spd);
+        const isMax=c===0;
+        html+=`<td style="padding:2px 2px;text-align:center;background:${bg};color:${fg};min-width:${cellW}px;${isMax?"font-weight:900;border:2px solid var(--yellow)":"border:1px solid rgba(0,0,0,.15)"}" title="Lap ${row.laps[c].lap}">${Math.round(spd)}</td>`;
+      }else{
+        html+=`<td style="min-width:${cellW}px"></td>`;
+      }
+    }
+    // Average column
+    const avgBg=heatColor(row.avg);
+    const avgFg=textColor(row.avg);
+    html+=`<td style="padding:2px 4px;text-align:center;background:${avgBg};color:${avgFg};font-weight:700;border-left:2px solid var(--yellow);border:1px solid rgba(0,0,0,.15)">${Math.round(row.avg)}</td>`;
+    html+=`</tr>`;
+  });
+
+  html+=`</tbody></table>`;
+
+  // Subtitle
+  const srcLabel=speedSrc==="telemetry"?"Telemetry (Full Circuit)":speedSrc==="st"?"Speed Trap":speedSrc==="i1"?"Intermediate 1":speedSrc==="i2"?"Intermediate 2":"Max (ST/I1/I2)";
+  const lapLabel=lapLimit>0?`${lapLimit} Best Shown`:"All Laps";
+  html+=`<div style="font-size:9px;color:var(--text2);margin-top:4px;text-align:center">Laps Sorted by ${srcLabel} Speed (${lapLabel}, Average on the Right) &mdash; Range: ${Math.round(globalMin)}-${Math.round(globalMax)} km/h</div>`;
+
   wrap.innerHTML=html;
 }
 
@@ -6846,8 +9477,10 @@ function redrawAll(){
     drawLapScatter();
     renderSpeedRankings();
     drawTopVsMean();
+    renderSpeedHeatmap();
     drawMultiDriverChart();
     if(STATE.sessionType==="practice")renderLongRuns();
+    if(STATE.sessionType==="race"||STATE.sessionType==="sprint"){_drawPsChart();if(_psView==="box"||_psView==="violin")_drawPsDistChart();}
     if(STATE.telemSlots.some(s=>s&&s.data))drawTelemCharts();
   }
 }
@@ -7362,7 +9995,8 @@ async function saveAIInsightAsNote(){
   const circuit=STATE.activeMeeting?.circuit_short_name||STATE.activeMeeting?.meeting_name||"";
   const sessionName=STATE.activeSession?.session_name||"";
   const sType=STATE.sessionType||"";
-  const source=sType==="practice"?"Practice Telemetry Analysis":
+  const source=sType==="race"||sType==="sprint"?"Yaris Temposu Dagilim Analizi":
+               sType==="practice"?"Practice Telemetry Analysis":
                sType==="qualifying"||sType==="sprint_quali"?"Qualifying Telemetry Analysis":
                "Telemetry Analysis";
 
@@ -7744,6 +10378,65 @@ async function generatePracticeAI(){
 /* ══════════════════════════════════════════════════════════════════════════════
    INIT
    ══════════════════════════════════════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════════════════════════════
+   SETTINGS MODAL — API Key Management
+   ══════════════════════════════════════════════════════════════════════════════ */
+async function openSettingsModal(){
+  const overlay=document.getElementById("settings-overlay");
+  overlay.style.display="flex";
+  // Fetch current key status
+  document.getElementById("settings-gemini-status").innerHTML='<span style="color:var(--text2)">checking...</span>';
+  document.getElementById("settings-claude-status").innerHTML='<span style="color:var(--text2)">checking...</span>';
+  document.getElementById("settings-gemini-key").value="";
+  document.getElementById("settings-claude-key").value="";
+  try{
+    const r=await fetch("/api/settings/keys");
+    const d=await r.json();
+    const gs=document.getElementById("settings-gemini-status");
+    const cs=document.getElementById("settings-claude-status");
+    if(d.gemini?.configured){
+      gs.innerHTML=`<span style="color:var(--green);font-weight:700">&#10003; Configured</span> <span style="color:var(--text2)">${esc(d.gemini.hint)}</span>`;
+    }else{
+      gs.innerHTML='<span style="color:var(--accent);font-weight:700">&#10007; Not set</span>';
+    }
+    if(d.claude?.configured){
+      cs.innerHTML=`<span style="color:var(--green);font-weight:700">&#10003; Configured</span> <span style="color:var(--text2)">${esc(d.claude.hint)}</span>`;
+    }else{
+      cs.innerHTML='<span style="color:var(--accent);font-weight:700">&#10007; Not set</span>';
+    }
+  }catch(e){
+    document.getElementById("settings-gemini-status").innerHTML='<span style="color:var(--accent)">Error</span>';
+    document.getElementById("settings-claude-status").innerHTML='<span style="color:var(--accent)">Error</span>';
+  }
+}
+function closeSettingsModal(){
+  document.getElementById("settings-overlay").style.display="none";
+}
+async function saveSettingsKeys(){
+  const geminiKey=document.getElementById("settings-gemini-key").value.trim();
+  const claudeKey=document.getElementById("settings-claude-key").value.trim();
+  if(!geminiKey&&!claudeKey){alert("Enter at least one API key to save.");return;}
+  const payload={};
+  if(geminiKey)payload.gemini_api_key=geminiKey;
+  if(claudeKey)payload.claude_api_key=claudeKey;
+  try{
+    const r=await fetch("/api/settings/keys",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(payload)
+    });
+    const d=await r.json();
+    if(d.ok){
+      alert("Saved: "+d.saved.join(", ")+" API key(s)");
+      openSettingsModal(); // refresh status
+    }else{
+      alert("Error: "+(d.error||"Unknown"));
+    }
+  }catch(e){
+    alert("Failed to save: "+e.message);
+  }
+}
+
 (async function init(){
   initYearSelect();
   await checkAuth();
@@ -7763,6 +10456,40 @@ async function generatePracticeAI(){
       <button class="ai-close" onclick="closeAIModal()">&times;</button>
     </div>
     <div class="ai-body" id="ai-body"></div>
+  </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settings-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:220;align-items:flex-start;justify-content:center;padding-top:10vh;overflow-y:auto" onclick="if(event.target===this)closeSettingsModal()">
+  <div style="width:480px;max-width:95vw;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5);overflow:hidden">
+    <div style="display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid var(--border);background:var(--surface2)">
+      <h3 style="margin:0;font-size:14px;color:var(--text)">&#9881;&#65039; API Key Settings</h3>
+      <button style="margin-left:auto;background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer" onclick="closeSettingsModal()">&times;</button>
+    </div>
+    <div style="padding:18px" id="settings-body">
+      <p style="font-size:11px;color:var(--text2);margin:0 0 14px">API keys are saved locally in <code>.app_config.json</code> and persist across server restarts. Keys are never exposed in full.</p>
+
+      <div style="margin-bottom:16px">
+        <label style="font-size:11px;font-weight:700;color:var(--text);display:block;margin-bottom:4px">Gemini API Key</label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="password" id="settings-gemini-key" placeholder="AIza..." style="flex:1;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;font-family:monospace">
+          <span id="settings-gemini-status" style="font-size:10px;white-space:nowrap"></span>
+        </div>
+      </div>
+
+      <div style="margin-bottom:16px">
+        <label style="font-size:11px;font-weight:700;color:var(--text);display:block;margin-bottom:4px">Claude (Anthropic) API Key</label>
+        <div style="display:flex;gap:6px;align-items:center">
+          <input type="password" id="settings-claude-key" placeholder="sk-ant-api03-..." style="flex:1;padding:6px 10px;border-radius:6px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;font-family:monospace">
+          <span id="settings-claude-status" style="font-size:10px;white-space:nowrap"></span>
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;justify-content:flex-end;border-top:1px solid var(--border);padding-top:14px">
+        <button class="ctrl-btn" onclick="closeSettingsModal()">Cancel</button>
+        <button class="ctrl-btn" onclick="saveSettingsKeys()" style="background:var(--blue);color:#fff;border-color:var(--blue)">&#128190; Save Keys</button>
+      </div>
+    </div>
   </div>
 </div>
 

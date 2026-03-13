@@ -15,6 +15,7 @@ import datetime
 import datetime as dt
 from io import StringIO
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 
@@ -153,11 +154,22 @@ def season_meetings():
     try:
         r = _req.get("https://api.openf1.org/v1/meetings",
                       params={"year": year}, headers=_openf1_headers(), timeout=12)
-        meetings = r.json() if r.status_code == 200 and isinstance(r.json(), list) else []
+        if r.status_code == 200:
+            body = r.json()
+            meetings = body if isinstance(body, list) else []
+        else:
+            # OpenF1 may require auth during live sessions
+            body = r.json() if r.headers.get("content-type","").startswith("application/json") else {}
+            detail = body.get("detail", "") if isinstance(body, dict) else ""
+            if "authenticated" in detail.lower() or r.status_code in (401, 403):
+                return jsonify({"error": "OpenF1 requires authentication during live sessions. Please log in above.", "auth_required": True}), 401
+            meetings = []
     except Exception as e:
         return jsonify({"error": str(e)}), 502
     meetings.sort(key=lambda m: m.get("date_start", ""))
-    _SEASON_CACHE[ck] = {"ts": time.time(), "data": meetings}
+    # Only cache non-empty results so transient API failures auto-recover on next request
+    if meetings:
+        _SEASON_CACHE[ck] = {"ts": time.time(), "data": meetings}
     return jsonify(meetings)
 
 @app.route("/api/season/sessions", methods=["GET"])
@@ -173,7 +185,15 @@ def season_sessions():
     try:
         r = _req.get("https://api.openf1.org/v1/sessions",
                       params={"meeting_key": mk}, headers=_openf1_headers(), timeout=12)
-        sessions = r.json() if r.status_code == 200 and isinstance(r.json(), list) else []
+        if r.status_code == 200:
+            body = r.json()
+            sessions = body if isinstance(body, list) else []
+        else:
+            body = r.json() if r.headers.get("content-type","").startswith("application/json") else {}
+            detail = body.get("detail", "") if isinstance(body, dict) else ""
+            if "authenticated" in detail.lower() or r.status_code in (401, 403):
+                return jsonify({"error": "OpenF1 requires authentication during live sessions. Please log in above.", "auth_required": True}), 401
+            sessions = []
     except Exception as e:
         return jsonify({"error": str(e)}), 502
     sessions.sort(key=lambda s: s.get("date_start", ""))
@@ -193,13 +213,43 @@ def season_session_data():
         return jsonify(cached["data"])
     OPENF1 = "https://api.openf1.org/v1"
     hdrs = _openf1_headers()
-    drivers_map = {}
-    laps = []
-    stints = []
-    race_control = []
-    try:
-        dr = _req.get(f"{OPENF1}/drivers", params={"session_key": sk}, headers=hdrs, timeout=10)
-        for d in (dr.json() if dr.status_code == 200 else []):
+
+    # --- Parallel fetch all endpoints for lower latency ---
+    def _fetch(url, params, timeout=10):
+        try:
+            r = _req.get(url, params=params, headers=hdrs, timeout=timeout)
+            return r.json() if r.status_code == 200 else []
+        except Exception:
+            return []
+
+    # On live refresh (nocache), reuse cached drivers to save time
+    # Drivers don't change mid-session
+    prev_drivers = None
+    if nocache and cached:
+        prev_drivers = cached["data"].get("drivers", {})
+
+    results = {}
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = {}
+        if not prev_drivers:
+            futures["drivers"] = executor.submit(_fetch, f"{OPENF1}/drivers", {"session_key": sk}, 10)
+        futures["laps"] = executor.submit(_fetch, f"{OPENF1}/laps", {"session_key": sk}, 15)
+        futures["stints"] = executor.submit(_fetch, f"{OPENF1}/stints", {"session_key": sk}, 10)
+        futures["race_control"] = executor.submit(_fetch, f"{OPENF1}/race_control", {"session_key": sk}, 10)
+        futures["positions"] = executor.submit(_fetch, f"{OPENF1}/position", {"session_key": sk}, 15)
+
+        for key, future in futures.items():
+            try:
+                results[key] = future.result(timeout=20)
+            except Exception:
+                results[key] = []
+
+    # Build drivers map
+    if prev_drivers:
+        drivers_map = prev_drivers
+    else:
+        drivers_map = {}
+        for d in (results.get("drivers") or []):
             dn = d.get("driver_number")
             if dn and dn not in drivers_map:
                 drivers_map[dn] = {
@@ -207,31 +257,15 @@ def season_session_data():
                     "acronym": d.get("name_acronym", ""),
                     "full_name": d.get("full_name", ""),
                     "team": d.get("team_name", ""),
+                    "team_name": d.get("team_name", ""),
                     "team_colour": d.get("team_colour", ""),
                 }
-    except Exception:
-        pass
-    try:
-        lr = _req.get(f"{OPENF1}/laps", params={"session_key": sk}, headers=hdrs, timeout=15)
-        laps = lr.json() if lr.status_code == 200 else []
-    except Exception:
-        pass
-    try:
-        sr = _req.get(f"{OPENF1}/stints", params={"session_key": sk}, headers=hdrs, timeout=10)
-        stints = sr.json() if sr.status_code == 200 else []
-    except Exception:
-        pass
-    try:
-        rc = _req.get(f"{OPENF1}/race_control", params={"session_key": sk}, headers=hdrs, timeout=10)
-        race_control = rc.json() if rc.status_code == 200 else []
-    except Exception:
-        pass
-    positions = []
-    try:
-        pr = _req.get(f"{OPENF1}/position", params={"session_key": sk}, headers=hdrs, timeout=15)
-        positions = pr.json() if pr.status_code == 200 else []
-    except Exception:
-        pass
+
+    laps = results.get("laps", [])
+    stints = results.get("stints", [])
+    race_control = results.get("race_control", [])
+    positions = results.get("positions", [])
+
     result = {
         "session_key": int(sk), "drivers": drivers_map,
         "laps": laps if isinstance(laps, list) else [],
@@ -241,6 +275,31 @@ def season_session_data():
     }
     _SEASON_CACHE[ck] = {"ts": time.time(), "data": result}
     return jsonify(result)
+
+@app.route("/api/season/pit_stops", methods=["GET"])
+def season_pit_stops():
+    import requests as _req
+    sk = request.args.get("session_key", "").strip()
+    if not sk:
+        return jsonify({"error": "session_key required"}), 400
+    ck = f"pits_{sk}"
+    cached = _SEASON_CACHE.get(ck)
+    if cached and (time.time() - cached["ts"]) < 300:
+        return jsonify(cached["data"])
+    OPENF1 = "https://api.openf1.org/v1"
+    hdrs = _openf1_headers()
+    try:
+        r = _req.get(f"{OPENF1}/pit", params={"session_key": sk}, headers=hdrs, timeout=12)
+        if r.status_code == 200:
+            body = r.json()
+            pits = body if isinstance(body, list) else []
+        else:
+            pits = []
+    except Exception:
+        pits = []
+    if pits:
+        _SEASON_CACHE[ck] = {"ts": time.time(), "data": pits}
+    return jsonify(pits)
 
 @app.route("/api/season/race_control", methods=["GET"])
 def season_race_control():
@@ -294,6 +353,113 @@ def test_car_data():
         return jsonify({"error": str(e)}), 502
     _CAR_DATA_CACHE[cache_key] = {"ts": time.time(), "data": data}
     return jsonify(data)
+
+_TOP_SPEED_CACHE = {}
+
+@app.route("/api/test_telemetry/top_speeds", methods=["GET"])
+def test_top_speeds():
+    """Fetch car_data for an entire driver session and compute max speed per lap."""
+    import requests as _req
+    sk = request.args.get("session_key", "").strip()
+    dn = request.args.get("driver_number", "").strip()
+    if not sk or not dn:
+        return jsonify({"error": "session_key and driver_number required"}), 400
+
+    cache_key = f"topspd_{sk}_{dn}"
+    cached = _TOP_SPEED_CACHE.get(cache_key)
+    if cached and (time.time() - cached["ts"]) < 600:
+        return jsonify(cached["data"])
+
+    # We need laps data to know the timestamp boundaries per lap
+    laps_data = request.args.get("laps", "")  # JSON array of {lap_number, date_start, lap_duration}
+    if not laps_data:
+        return jsonify({"error": "laps parameter required (JSON array)"}), 400
+
+    try:
+        import json as _json
+        lap_list = _json.loads(laps_data)
+    except Exception:
+        return jsonify({"error": "Invalid laps JSON"}), 400
+
+    if not lap_list:
+        return jsonify([])
+
+    # Sort laps by date_start
+    lap_list.sort(key=lambda l: l.get("date_start", ""))
+
+    # Fetch all car_data for the driver in the session (no time filter = full session)
+    # To limit data, use the first lap start and last lap end as bounds
+    first_start = lap_list[0].get("date_start", "")
+    last_lap = lap_list[-1]
+    last_start = last_lap.get("date_start", "")
+    last_dur = last_lap.get("lap_duration", 120)
+    if last_start and last_dur:
+        from datetime import datetime, timedelta
+        try:
+            end_dt = datetime.fromisoformat(last_start.replace("Z", "+00:00")) + timedelta(seconds=last_dur + 5)
+            last_end = end_dt.isoformat()
+        except Exception:
+            last_end = ""
+    else:
+        last_end = ""
+
+    params = {"session_key": sk, "driver_number": dn}
+    if first_start:
+        params["date>"] = first_start
+    if last_end:
+        params["date<"] = last_end
+
+    try:
+        r = _req.get("https://api.openf1.org/v1/car_data", params=params, headers=_openf1_headers(), timeout=30)
+        if r.status_code != 200:
+            return jsonify({"error": f"OpenF1 car_data error: {r.status_code}"}), 502
+        car_data = r.json() if isinstance(r.json(), list) else []
+    except Exception as e:
+        return jsonify({"error": str(e)}), 502
+
+    if not car_data:
+        return jsonify([])
+
+    # Build lap boundaries: for each lap, determine start/end timestamps
+    from datetime import datetime, timedelta
+    lap_boundaries = []
+    for lap in lap_list:
+        ds = lap.get("date_start")
+        dur = lap.get("lap_duration")
+        ln = lap.get("lap_number")
+        if not ds or not ln:
+            continue
+        try:
+            start_dt = datetime.fromisoformat(ds.replace("Z", "+00:00"))
+            end_dt = start_dt + timedelta(seconds=(dur or 120))
+            lap_boundaries.append({"lap": ln, "start": start_dt, "end": end_dt})
+        except Exception:
+            continue
+
+    # For each telemetry point, find which lap it belongs to and track max speed
+    max_speed_per_lap = {}
+    for point in car_data:
+        spd = point.get("speed", 0)
+        if spd <= 0:
+            continue
+        pt_date = point.get("date", "")
+        if not pt_date:
+            continue
+        try:
+            pt_dt = datetime.fromisoformat(pt_date.replace("Z", "+00:00"))
+        except Exception:
+            continue
+        for lb in lap_boundaries:
+            if lb["start"] <= pt_dt <= lb["end"]:
+                lap_num = lb["lap"]
+                if lap_num not in max_speed_per_lap or spd > max_speed_per_lap[lap_num]:
+                    max_speed_per_lap[lap_num] = spd
+                break
+
+    result = [{"lap_number": ln, "top_speed": spd} for ln, spd in sorted(max_speed_per_lap.items())]
+    _TOP_SPEED_CACHE[cache_key] = {"ts": time.time(), "data": result}
+    return jsonify(result)
+
 
 _LOCATION_CACHE = {}
 
@@ -1030,6 +1196,252 @@ Answer the user's question based on this telemetry data. Be specific, technical,
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/telemetry/race_pace_analysis", methods=["POST"])
+def telemetry_race_pace_analysis():
+    """AI analysis of race pace distribution — box/whisker & violin chart data."""
+    try:
+        data = request.get_json(force=True)
+        provider = (data.get("provider") or "gemini").strip().lower()
+        session_info = data.get("session_info", {})
+        pace_data = data.get("pace_data", "")
+
+        if not pace_data or len(pace_data) < 100:
+            return jsonify({"error": "Insufficient race pace data provided"}), 400
+
+        api_key, err = _get_telemetry_api_key(provider)
+        if err:
+            return jsonify({"error": "NO_KEY", "message": err}), 400
+
+        year = session_info.get("year", 2025)
+        try:
+            year = int(year)
+        except:
+            year = 2025
+
+        circuit_name = session_info.get("circuit", "Unknown")
+        circuit_context = _build_circuit_context(circuit_name, year)
+
+        fuel_note = ""
+        if year >= 2026:
+            fuel_note = """
+IMPORTANT — 2026 REGULATION CONTEXT:
+The 2026 F1 regulations change the fuel correction landscape significantly:
+- Smaller fuel tank (~70 kg vs ~110 kg pre-2026), so the total fuel-effect window is narrower
+- The default 0.10 s/lap fuel effect may be too high for 2026; empirical values may be 0.06–0.08 s/lap
+- No MGU-H means different energy recovery profiles affecting lap time patterns
+- 350kW MGU-K + active aero change the relationship between car mass and lap time
+- Treat fuel-corrected values as approximate until empirical 2026 data is established
+- Relative deltas between drivers within the same session remain valid regardless
+"""
+        else:
+            fuel_note = """
+FUEL CORRECTION NOTE:
+The fuel correction uses 0.10 s/lap (representing ~3.0–3.2 kg/lap fuel burn at ~0.03–0.035 s/kg).
+This is well-established for pre-2026 seasons (typical range: 0.07–0.12 s/lap depending on circuit).
+Early-race laps appear slower (heavier car) and late-race laps faster (lighter car).
+The correction normalizes all laps to mid-race fuel load for fair comparison.
+"""
+
+        # Sanitize pace_data: strip non-ASCII box-drawing chars that some APIs reject
+        import re as _re
+        pace_data_clean = _re.sub(r'[^\x00-\x7F]+', lambda m: m.group().encode('ascii', 'replace').decode(), pace_data)
+
+        prompt = f"""Sen uzman bir F1 yarish stratejisti ve veri analistisin. Asagidaki yaris temposu dagilim verilerini analiz et.
+Bu analiz bir YouTube F1 programi icin hazirlanacak — sanki Turkce yayinlanan, analitik bir F1 yaris inceleme programinda sunuculuk yapiyorsun. Dil akici, teknik ama anlasilir Turkce olmali. F1 terminolojisini Turkce karsiliklariyla birlikte kullan (ornegin: "medyan tempo", "lastik degradasyonu", "undercut", "tyre cliff").
+
+ONEMLI: Pilot isimlerini TAM ve DOGRU olarak kullan. Verideki full_name alanlarini referans al. Ornegin: ANT = Andrea Kimi Antonelli (Antonio degil!), VER = Max Verstappen, HAD = Isack Hadjar, BOR = Gabriel Bortoleto, LIN = Arvid Lindblad. Kisaltmalari aciklamadan kullanma.
+
+Pist: {circuit_name}
+Seans: {session_info.get("session_name", "Race")}
+Seans Tipi: {session_info.get("session_type", "race")}
+Sezon: {year}
+
+{circuit_context}
+
+{fuel_note}
+
+--- YARIS TEMPOSU DAGILIM VERILERI ---
+{pace_data_clean}
+--- VERI SONU ---
+
+ONCELIK: HAM (RAW) TEMPO ANALIZI ana odak noktasi olmalidir. Yakit duzeltmesi ikincil bilgi olarak verilmeli. Gercek yaris kosullarinda ham sureler daha fazla anlam tasiyor cunku yakit etkisi mevcut verilerle her zaman dogru hesaplanamayabilir.
+
+Asagidaki formatta kapsamli bir analiz yap (markdown):
+
+## Yaris Temposu Genel Bakis
+En guclu ham yaris temposuna kim sahipti? Pilotlari medyan tur surelerine gore sirala. Her pilotin tam adini kullan. Hangi pilotlar beklenenden iyi/kotu gitti?
+
+## Ham Tempo Dagilim Analizi (ANA BOLUM)
+Her rekabet grubu icin (on siradakiler, orta alan, arka grup):
+- **Medyan tempo** — yaris gununde gercekten en hizli kim? Spesifik sureler ve deltalar ver.
+- **Tutarlilik (IQR ve StdDev)** — dar IQR = metronom gibi tutarlilik; genis = dengesiz. En tutarli ve en tutarsiz pilotlar kimler? Neden?
+- **Aykiri degerler (outlier)** — hangi pilotlarin anormal turlari var? Bunlar trafik mi, pilot hatasi mi, strateji kaynakli mi? Tahmin et.
+- **Carpiklik** — dagilim simetrik mi, yoksa hizli/yavas turlara dogru mu kaymis?
+
+## Stint Bazinda Detayli Analiz (Tur-Tur Inceleme)
+Her pilotun her stinti icin ayri ayri:
+- Hangi lastik bilesigi hangi tempoda gidildi?
+- Stint ortalama sureleri arasindaki farklar ne anlama geliyor?
+- Degradasyon nasil gelisti? Ilk turlardaki pace vs son turlardaki pace karsilastir.
+- Lastik ucurumu (tyre cliff) veya ani performans dususu kaniti var mi?
+- Erken pit yapanlar vs gec pit yapanlar — kim avantajli cikti?
+- Stintler arasi tempo farklari strateji secimine mi, lastik durumuna mi, yoksa pilot performansina mi bagli?
+
+## Takim Ici Karsilastirmalar
+Her takim cifti icin:
+- Tempo avantaji kimde ve ne kadar (spesifik sureler ile)?
+- Biri digerinden daha tutarli miydi? (IQR ve StdDev karsilastir)
+- Strateji farkliliklari tempo farklarini acikliyor mu?
+
+## Yakit Duzeltmesi Notu (Kisa)
+Ham ve yakit-duzeltmeli siralama arasindaki onemli farklar varsa kisa bir not. Ama bu ikincil bilgi — asil analiz ham tempolar uzerinden yapilmali.
+
+## Stratejik Cikarimlar
+- Tempo dagilimina gore hangi stratejiler basarili, hangileri basarisiz oldu?
+- Aracindan beklenenin uzerinde performans gosteren kim?
+- Beklentilerin altinda kalan kim?
+
+## Ana Cikarimlar
+En onemli 5-7 maddelik bir ozet. Her madde spesifik veriye dayali olmali.
+
+Tur sureleri ve farklarla (delta) cok spesifik ol. Genel ifadelerden kacin, her iddiaya sayisal kanit goster. F1 terminolojisini Turkce karsiliklariyla kullan. Uslup: profesyonel, analitik, YouTube yayini icin hazir — sanki kameraya bakip izleyicilere anlatiyorsun. Pilot isimlerini HER ZAMAN tam olarak yaz."""
+
+        if provider == "claude":
+            content_text = _call_claude_for_prompt(api_key, prompt, max_tokens=8192)
+            return jsonify({"ok": True, "analysis": content_text, "provider": "claude"})
+
+        # Gemini
+        import urllib.request as urlreq
+        import urllib.error
+
+        parts = [{"text": prompt}]
+        payload = {
+            "contents": [{"parts": parts}],
+            "generationConfig": {"temperature": 0.7, "maxOutputTokens": 8192}
+        }
+        payload_bytes = json.dumps(payload).encode("utf-8")
+
+        models = ["gemini-2.5-flash", "gemini-2.0-flash"]
+        last_err = None
+        for model in models:
+            api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+            for attempt in range(3):
+                try:
+                    req = urlreq.Request(api_url, data=payload_bytes, headers={"Content-Type": "application/json"})
+                    with urlreq.urlopen(req, timeout=90) as resp:
+                        result = json.loads(resp.read().decode("utf-8"))
+                    content_text = result["candidates"][0]["content"]["parts"][0]["text"].strip()
+                    return jsonify({"ok": True, "analysis": content_text, "provider": "gemini"})
+                except urlreq.HTTPError as he:
+                    last_err = he
+                    if he.code == 429:
+                        time.sleep((attempt + 1) * 3)
+                        continue
+                    elif he.code == 404:
+                        break
+                    else:
+                        raise
+                except Exception as ex:
+                    last_err = ex
+                    if attempt < 2:
+                        time.sleep(2)
+                        continue
+                    break
+        raise last_err or Exception("All Gemini models failed")
+
+    except json.JSONDecodeError as e:
+        return jsonify({"error": f"Invalid request: {str(e)}"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/telemetry/scenario_analysis", methods=["POST"])
+def telemetry_scenario_analysis():
+    try:
+        data = request.get_json(force=True)
+        session_info = data.get("session_info", {})
+        race_context = data.get("race_context", "")
+        question = data.get("question", "").strip()
+
+        if not race_context or len(race_context) < 200:
+            return jsonify({"error": "Yeterli yaris verisi yok"}), 400
+        if not question:
+            return jsonify({"error": "Senaryo sorusu gerekli"}), 400
+
+        # Scenario analysis uses Claude only (best for complex reasoning)
+        api_key = _get_claude_key()
+        if not api_key:
+            return jsonify({"error": "Claude API key is not configured. Please add it in Settings (gear icon)."}), 400
+
+        circuit_name = session_info.get("circuit", "Unknown")
+        year = session_info.get("year", 2026)
+
+        import re as _re
+        race_context_clean = _re.sub(r'[^\x00-\x7F]+', lambda m: m.group().encode('ascii', 'replace').decode(), race_context)
+        question_clean = _re.sub(r'[^\x00-\x7F]+', lambda m: m.group().encode('ascii', 'replace').decode(), question)
+
+        prompt = f"""Sen uzman bir F1 yaris stratejisti, veri analisti ve alternatif senaryo degerlendirmecisisin.
+Asagida bir F1 yarisinin TUM detaylari verilmistir: sonuclar, grid pozisyonlari, pit stoplari, lastik stratejileri, SC/VSC pencereleri, tur-tur sureleri ve pozisyon degisimleri.
+
+Kullanici sana bir "Ya ... olsaydi?" (what-if) senaryo sorusu soruyor. Bu soruyu VERILERE DAYANARAK analiz etmelisin.
+
+ONEMLI KURALLAR:
+1. Pilot isimlerini TAM ve DOGRU kullan (ANT = Andrea Kimi Antonelli, Antonio degil!)
+2. Spesifik tur sureleri, pozisyonlar ve araliklar kullanarak cevap ver
+3. Alternatif senaryoyu adim adim simule et: "Bu turda su olsaydi, sonraki turda su degisirdi..."
+4. Sadece tahmin yapma — verideki tur sureleri, degradasyon oranlari ve araliklara dayanarak mantiksal cikarimlar yap
+5. Her senaryonun OLASILIK derecesini belirt (yuksek/orta/dusuk guvenilirlik)
+6. Turkce yaz, YouTube F1 analiz programi formatinda — profesyonel ve analitik
+
+Pist: {circuit_name}
+Seans: {session_info.get("session_name", "Race")}
+Sezon: {year}
+
+--- YARIS VERILERI ---
+{race_context_clean}
+--- VERI SONU ---
+
+KULLANICI SORUSU:
+{question_clean}
+
+Asagidaki formatta kapsamli bir senaryo analizi yap (markdown):
+
+## Senaryo Ozeti
+Sorulan senaryoyu kisa ve net olarak ozetle.
+
+## Gercek Durum (Ne Oldu?)
+Gercekte ne oldugunu kisa ozetle — ilgili pilotlarin turlari, pit stoplari, pozisyonlari.
+
+## Alternatif Senaryo Simulasyonu
+Adim adim, tur-tur analiz:
+- Senaryodaki degisiklik hangi turda/turda olacakti?
+- Bu degisiklik hangi pilotlari etkilerdi?
+- Pit penceresi ve trafik nasil degisirdi?
+- Tur surelerine dayanarak yeni pozisyon hesaplamasi yap
+- Lastik degradasyonu ve yakit etkisini hesaba kat
+
+## Tahmini Alternatif Sonuc
+Yeni tahmini yaris siralamasini listele (en az ilk 5-10 pilot).
+Her pilotun gercek sonucuyla karsilastir.
+
+## Guvenilirlik Degerlendirmesi
+Bu senaryonun gerceklesme olasiligi ve analizin guvenilirligi hakkinda not.
+Hangi varsayimlar belirsiz? Hangi faktorler tahmin edilemez?
+
+## Anahtar Cikarimlar
+3-5 maddelik ozet: Bu senaryo gerceklesseydi en onemli farklar ne olurdu?
+
+Cok spesifik ol. Her iddiaya sayisal kanit goster. Tur sureleri, araliklar ve pozisyonlar kullan."""
+
+        content_text = _call_claude_for_prompt(api_key, prompt, max_tokens=8192)
+        return jsonify({"ok": True, "analysis": content_text, "provider": "claude"})
+
+    except json.JSONDecodeError as e:
+        return jsonify({"error": f"Invalid request: {str(e)}"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/telemetry/practice_analysis", methods=["POST"])
 def telemetry_practice_analysis():
     try:
@@ -1461,6 +1873,40 @@ def index():
 @app.route("/f1notes/session_telemetry.html")
 def session_telemetry():
     return send_from_directory(STATIC_DIR, "session_telemetry.html")
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# API KEY SETTINGS
+# ══════════════════════════════════════════════════════════════════════════════
+@app.route("/api/settings/keys", methods=["GET"])
+def get_api_keys():
+    """Return which API keys are configured (masked, never expose full keys)."""
+    gemini = _get_gemini_key()
+    claude = _get_claude_key()
+    return jsonify({
+        "gemini": {"configured": bool(gemini), "hint": (gemini[:4] + "..." + gemini[-4:]) if len(gemini) > 10 else ""},
+        "claude": {"configured": bool(claude), "hint": (claude[:7] + "..." + claude[-4:]) if len(claude) > 12 else ""},
+    })
+
+@app.route("/api/settings/keys", methods=["POST"])
+def save_api_keys():
+    """Save API keys to .app_config.json (persisted across restarts)."""
+    try:
+        data = request.get_json(force=True)
+        cfg = _load_app_config()
+        changed = []
+        if "gemini_api_key" in data and data["gemini_api_key"].strip():
+            cfg["gemini_api_key"] = data["gemini_api_key"].strip()
+            changed.append("Gemini")
+        if "claude_api_key" in data and data["claude_api_key"].strip():
+            cfg["claude_api_key"] = data["claude_api_key"].strip()
+            changed.append("Claude")
+        if not changed:
+            return jsonify({"error": "No keys provided"}), 400
+        _save_app_config(cfg)
+        return jsonify({"ok": True, "saved": changed})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # ══════════════════════════════════════════════════════════════════════════════
