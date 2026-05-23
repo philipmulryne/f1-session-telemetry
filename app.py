@@ -16,6 +16,7 @@ import datetime as dt
 from io import StringIO
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from threading import Lock
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
 
@@ -66,6 +67,36 @@ def _get_claude_key():
 # ══════════════════════════════════════════════════════════════════════════════
 _OPENF1_TOKEN = None
 _OPENF1_CREDS = None
+_OPENF1_AUTH_PATH = os.path.join(DATA_DIR, "openf1_auth_state.json")
+_OPENF1_AUTH_LOCK = Lock()
+
+def _load_openf1_auth_state():
+    """Load shared OpenF1 auth state so all workers/devices stay in sync."""
+    if not os.path.exists(_OPENF1_AUTH_PATH):
+        return {"token": None, "creds": None}
+    try:
+        with open(_OPENF1_AUTH_PATH, "r") as f:
+            body = json.load(f)
+        if not isinstance(body, dict):
+            return {"token": None, "creds": None}
+        token = body.get("token")
+        creds = body.get("creds")
+        if not isinstance(token, dict):
+            token = None
+        if not isinstance(creds, dict):
+            creds = None
+        return {"token": token, "creds": creds}
+    except Exception:
+        return {"token": None, "creds": None}
+
+def _save_openf1_auth_state(token, creds):
+    """Atomic write so multiple workers can safely read shared auth state."""
+    with _OPENF1_AUTH_LOCK:
+        payload = {"token": token, "creds": creds, "updated_at": time.time()}
+        tmp_path = _OPENF1_AUTH_PATH + ".tmp"
+        with open(tmp_path, "w") as f:
+            json.dump(payload, f)
+        os.replace(tmp_path, _OPENF1_AUTH_PATH)
 
 def _openf1_obtain_token(username, password):
     import requests as _req
@@ -87,13 +118,32 @@ def _openf1_obtain_token(username, password):
         return None, str(e)
 
 def _openf1_ensure_token():
-    global _OPENF1_TOKEN
+    global _OPENF1_TOKEN, _OPENF1_CREDS
+    # 1) Try in-process token first (fast path)
     if _OPENF1_TOKEN and time.time() < _OPENF1_TOKEN["expires_at"]:
         return True
+
+    # 2) Sync from shared auth file (other worker/device may have logged in)
+    shared = _load_openf1_auth_state()
+    shared_tok = shared.get("token")
+    shared_creds = shared.get("creds")
+    if shared_tok and time.time() < shared_tok.get("expires_at", 0):
+        _OPENF1_TOKEN = shared_tok
+        if shared_creds:
+            _OPENF1_CREDS = shared_creds
+        return True
+    if shared_creds and not _OPENF1_CREDS:
+        _OPENF1_CREDS = shared_creds
+
+    # 3) Refresh token from creds if possible, then persist
     if _OPENF1_CREDS:
         tok, err = _openf1_obtain_token(_OPENF1_CREDS["username"], _OPENF1_CREDS["password"])
         if tok:
             _OPENF1_TOKEN = tok
+            try:
+                _save_openf1_auth_state(_OPENF1_TOKEN, _OPENF1_CREDS)
+            except Exception:
+                pass
             return True
     return False
 
@@ -117,23 +167,52 @@ def openf1_auth():
     global _OPENF1_TOKEN, _OPENF1_CREDS
     _OPENF1_TOKEN = tok
     _OPENF1_CREDS = {"username": username, "password": password}
+    try:
+        _save_openf1_auth_state(_OPENF1_TOKEN, _OPENF1_CREDS)
+    except Exception:
+        pass
     return jsonify({"ok": True, "expires_in": tok["expires_in"]})
 
 @app.route("/api/openf1_auth/refresh", methods=["POST"])
 def openf1_auth_refresh():
-    global _OPENF1_TOKEN
+    global _OPENF1_TOKEN, _OPENF1_CREDS
+    if not _OPENF1_CREDS:
+        shared = _load_openf1_auth_state()
+        if shared.get("creds"):
+            _OPENF1_CREDS = shared["creds"]
     if not _OPENF1_CREDS:
         return jsonify({"ok": False, "error": "No stored credentials. Please log in first."}), 401
     tok, err = _openf1_obtain_token(_OPENF1_CREDS["username"], _OPENF1_CREDS["password"])
     if err:
         return jsonify({"ok": False, "error": err}), 401
     _OPENF1_TOKEN = tok
+    try:
+        _save_openf1_auth_state(_OPENF1_TOKEN, _OPENF1_CREDS)
+    except Exception:
+        pass
     return jsonify({"ok": True, "expires_in": tok["expires_in"]})
 
 @app.route("/api/openf1_auth", methods=["GET"])
 def openf1_auth_status():
-    if _OPENF1_TOKEN and time.time() < _OPENF1_TOKEN["expires_at"]:
-        remaining = int(_OPENF1_TOKEN["expires_at"] - time.time())
+    # Status check must be snappy — never block on the OpenF1 token endpoint.
+    # Only consult in-process token and the shared-state file. If neither yields
+    # a live token, report unauthenticated so the UI can stop spinning.
+    global _OPENF1_TOKEN, _OPENF1_CREDS
+    now = time.time()
+    tok = _OPENF1_TOKEN
+    if not (tok and now < tok.get("expires_at", 0)):
+        shared = _load_openf1_auth_state()
+        shared_tok = shared.get("token")
+        shared_creds = shared.get("creds")
+        if shared_tok and now < shared_tok.get("expires_at", 0):
+            _OPENF1_TOKEN = shared_tok
+            tok = shared_tok
+            if shared_creds and not _OPENF1_CREDS:
+                _OPENF1_CREDS = shared_creds
+        elif shared_creds and not _OPENF1_CREDS:
+            _OPENF1_CREDS = shared_creds
+    if tok and now < tok.get("expires_at", 0):
+        remaining = int(tok["expires_at"] - now)
         return jsonify({"authenticated": True, "expires_in": remaining, "has_creds": _OPENF1_CREDS is not None})
     return jsonify({"authenticated": False, "has_creds": _OPENF1_CREDS is not None})
 
@@ -218,7 +297,11 @@ def season_session_data():
     def _fetch(url, params, timeout=10):
         try:
             r = _req.get(url, params=params, headers=hdrs, timeout=timeout)
-            return r.json() if r.status_code == 200 else []
+            if r.status_code != 200:
+                return []
+            body = r.json()
+            # OpenF1 returns JSON arrays; error/wrapper objects must not replace lists with bogus types
+            return body if isinstance(body, list) else []
         except Exception:
             return []
 
@@ -233,14 +316,14 @@ def season_session_data():
         futures = {}
         if not prev_drivers:
             futures["drivers"] = executor.submit(_fetch, f"{OPENF1}/drivers", {"session_key": sk}, 10)
-        futures["laps"] = executor.submit(_fetch, f"{OPENF1}/laps", {"session_key": sk}, 15)
-        futures["stints"] = executor.submit(_fetch, f"{OPENF1}/stints", {"session_key": sk}, 10)
-        futures["race_control"] = executor.submit(_fetch, f"{OPENF1}/race_control", {"session_key": sk}, 10)
-        futures["positions"] = executor.submit(_fetch, f"{OPENF1}/position", {"session_key": sk}, 15)
+        futures["laps"] = executor.submit(_fetch, f"{OPENF1}/laps", {"session_key": sk}, 25)
+        futures["stints"] = executor.submit(_fetch, f"{OPENF1}/stints", {"session_key": sk}, 15)
+        futures["race_control"] = executor.submit(_fetch, f"{OPENF1}/race_control", {"session_key": sk}, 15)
+        futures["positions"] = executor.submit(_fetch, f"{OPENF1}/position", {"session_key": sk}, 25)
 
         for key, future in futures.items():
             try:
-                results[key] = future.result(timeout=20)
+                results[key] = future.result(timeout=40)
             except Exception:
                 results[key] = []
 
@@ -262,16 +345,37 @@ def season_session_data():
                 }
 
     laps = results.get("laps", [])
+    if not isinstance(laps, list):
+        laps = []
     stints = results.get("stints", [])
+    if not isinstance(stints, list):
+        stints = []
     race_control = results.get("race_control", [])
+    if not isinstance(race_control, list):
+        race_control = []
     positions = results.get("positions", [])
+    if not isinstance(positions, list):
+        positions = []
+
+    # Live refresh (nocache): OpenF1 sometimes returns [] on timeout/error while other
+    # endpoints succeed — do not wipe data the client already had.
+    if nocache and cached:
+        prev_d = cached.get("data") or {}
+        if not laps and prev_d.get("laps"):
+            laps = prev_d["laps"]
+        if not stints and prev_d.get("stints"):
+            stints = prev_d["stints"]
+        if not race_control and prev_d.get("race_control"):
+            race_control = prev_d["race_control"]
+        if not positions and prev_d.get("positions"):
+            positions = prev_d["positions"]
 
     result = {
         "session_key": int(sk), "drivers": drivers_map,
-        "laps": laps if isinstance(laps, list) else [],
-        "stints": stints if isinstance(stints, list) else [],
-        "race_control": race_control if isinstance(race_control, list) else [],
-        "positions": positions if isinstance(positions, list) else []
+        "laps": laps,
+        "stints": stints,
+        "race_control": race_control,
+        "positions": positions,
     }
     _SEASON_CACHE[ck] = {"ts": time.time(), "data": result}
     return jsonify(result)
@@ -490,6 +594,77 @@ def test_location():
         return jsonify({"error": str(e)}), 502
     _LOCATION_CACHE[cache_key] = {"ts": time.time(), "data": data}
     return jsonify(data)
+
+
+@app.route("/api/live/locations", methods=["GET"])
+def live_locations_batch():
+    """Fetch OpenF1 /location for many drivers in parallel (live circuit map)."""
+    import requests as _req
+    import datetime as _dt
+    sk = request.args.get("session_key", "").strip()
+    drivers_param = request.args.get("drivers", "").strip()
+    since = request.args.get("since", "").strip()
+    until = request.args.get("until", "").strip()
+    windowEnd = request.args.get("window_end", "").strip()
+    if not sk or not drivers_param:
+        return jsonify({"error": "session_key and drivers required"}), 400
+    dns = []
+    for part in drivers_param.split(","):
+        p = part.strip()
+        if p.isdigit():
+            dns.append(p)
+    if not dns:
+        return jsonify({"error": "no valid driver numbers"}), 400
+    dns = dns[:24]
+
+    base_params = {"session_key": sk}
+    if since:
+        base_params["date>"] = since
+        if until:
+            base_params["date<"] = until
+    else:
+        try:
+            if windowEnd:
+                end = _dt.datetime.fromisoformat(windowEnd.replace("Z", "+00:00"))
+            else:
+                end = _dt.datetime.now(_dt.timezone.utc)
+        except Exception:
+            end = _dt.datetime.now(_dt.timezone.utc)
+        start = end - _dt.timedelta(seconds=10)
+        base_params["date>"] = start.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "+00:00"
+        base_params["date<"] = end.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "+00:00"
+
+    hdrs = _openf1_headers()
+    url = "https://api.openf1.org/v1/location"
+    auth_problem = [False]
+
+    def fetch_dn(dn):
+        params = dict(base_params)
+        params["driver_number"] = dn
+        try:
+            r = _req.get(url, params=params, headers=hdrs, timeout=14)
+            if r.status_code in (401, 403):
+                auth_problem[0] = True
+                return {"driver_number": int(dn), "points": [], "error": r.status_code}
+            if r.status_code != 200:
+                return {"driver_number": int(dn), "points": [], "error": r.status_code}
+            body = r.json()
+            pts = body if isinstance(body, list) else []
+            return {"driver_number": int(dn), "points": pts}
+        except Exception as e:
+            return {"driver_number": int(dn), "points": [], "error": str(e)}
+
+    results = []
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        results = list(executor.map(fetch_dn, dns))
+
+    if auth_problem[0]:
+        return jsonify({
+            "error": "OpenF1 requires authentication during live sessions. Please log in above.",
+            "auth_required": True,
+            "drivers": results,
+        }), 401
+    return jsonify({"drivers": results})
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -1613,13 +1788,61 @@ def notes_from_ai_insight():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# LIST SAVED NOTES (for browsing AI insight notes from the telemetry UI)
+# ══════════════════════════════════════════════════════════════════════════════
+@app.route("/api/notes/list", methods=["GET"])
+def notes_list():
+    """Return saved notes, optionally filtered by tag."""
+    tag = request.args.get("tag", "").strip()
+    try:
+        with open(NOTES_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        return jsonify({"notes": []})
+
+    notes = data.get("notes", []) if isinstance(data, dict) else (data if isinstance(data, list) else [])
+    if tag:
+        notes = [n for n in notes if tag in (n.get("tags") or [])]
+    # Return newest first, limit to 100
+    return jsonify({"notes": notes[:100]})
+
+
+@app.route("/api/notes/delete", methods=["POST"])
+def notes_delete():
+    """Delete a note by id."""
+    data = request.get_json(force=True)
+    note_id = (data.get("id") or "").strip()
+    if not note_id:
+        return jsonify({"error": "No note id"}), 400
+    try:
+        with open(NOTES_PATH, "r", encoding="utf-8") as f:
+            notes_data = json.load(f)
+    except Exception:
+        return jsonify({"error": "Could not read notes"}), 500
+
+    notes = notes_data.get("notes", []) if isinstance(notes_data, dict) else notes_data
+    before = len(notes)
+    notes = [n for n in notes if n.get("id") != note_id]
+    if len(notes) == before:
+        return jsonify({"error": "Note not found"}), 404
+
+    if isinstance(notes_data, dict):
+        notes_data["notes"] = notes
+    else:
+        notes_data = notes
+    with open(NOTES_PATH, "w", encoding="utf-8") as f:
+        json.dump(notes_data, f, ensure_ascii=False, indent=2)
+    return jsonify({"ok": True})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # HISTORICAL RESULTS — CSV storage & stats API
 # ══════════════════════════════════════════════════════════════════════════════
 def _hist_csv_path(year, stype):
     return os.path.join(_HIST_DIR, f"{stype}_results_{year}.csv")
 
 _RACE_POINTS = [25, 18, 15, 12, 10, 8, 6, 4, 2, 1]
-_SPRINT_POINTS = [8, 7, 6, 5, 4, 3, 2, 1]
+_SPRINT_POINTS = [10, 9, 8, 7, 6, 5, 4, 3]
 
 def _f1_points(pos, is_sprint=False):
     tbl = _SPRINT_POINTS if is_sprint else _RACE_POINTS
@@ -1736,7 +1959,9 @@ def historical_stats():
                 "races": 0, "wins": 0, "podiums": 0, "points": 0,
                 "dnfs": 0, "best_finish": 99, "grid_avg": 0, "finish_avg": 0,
                 "front_rows": 0, "poles": 0, "fastest_laps": 0,
-                "race_results": [], "grid_positions": []}
+                "race_results": [], "quali_results": [], "sprint_quali_results": [],
+                "sprint_results": [],
+                "grid_positions": []}
         ds = driver_stats[dn]
         ds["team"] = r.get("team", ds["team"])
         ds["races"] += 1
@@ -1766,12 +1991,18 @@ def historical_stats():
                 "races": 0, "wins": 0, "podiums": 0, "points": 0,
                 "dnfs": 0, "best_finish": 99, "grid_avg": 0, "finish_avg": 0,
                 "front_rows": 0, "poles": 0, "fastest_laps": 0,
-                "race_results": [], "grid_positions": []}
+                "race_results": [], "quali_results": [], "sprint_quali_results": [],
+                "sprint_results": [],
+                "grid_positions": []}
         ds = driver_stats[dn]
         fp = int(r.get("finish_position", 99) or 99)
-        pts_raw = r.get("points", "")
-        pts = float(pts_raw) if pts_raw not in ("", None, "0") else _f1_points(fp, True)
+        gp = int(r.get("grid_position", 99) or 99)
+        pts = _f1_points(fp, True) if fp < 99 else 0
         ds["points"] += pts
+        ds.setdefault("sprint_results", []).append({
+            "round": r.get("round", ""), "meeting": r.get("meeting_name", ""),
+            "grid": gp, "finish": fp, "points": pts, "status": r.get("status", ""),
+            "session_type": r.get("session_type", "sprint")})
 
     for r in quali_rows:
         dn = r.get("driver_acronym", "?")
@@ -1780,11 +2011,22 @@ def historical_stats():
                 "races": 0, "wins": 0, "podiums": 0, "points": 0,
                 "dnfs": 0, "best_finish": 99, "grid_avg": 0, "finish_avg": 0,
                 "front_rows": 0, "poles": 0, "fastest_laps": 0,
-                "race_results": [], "grid_positions": []}
+                "race_results": [], "quali_results": [], "sprint_quali_results": [],
+                "sprint_results": [], "grid_positions": []}
         ds = driver_stats[dn]
         gp = int(r.get("grid_position", 99) or 99)
-        if gp == 1: ds["poles"] += 1
-        if gp <= 2: ds["front_rows"] += 1
+        entry = {
+            "round": r.get("round", ""), "meeting": r.get("meeting_name", ""),
+            "grid": gp,
+            "q1": r.get("q1_time", ""), "q2": r.get("q2_time", ""), "q3": r.get("q3_time", ""),
+            "eliminated": r.get("eliminated_phase", ""), "best": r.get("best_time", ""),
+            "session_type": r.get("session_type", "qualifying")}
+        if r.get("session_type", "qualifying") == "sprint_quali":
+            ds.setdefault("sprint_quali_results", []).append(entry)
+        else:
+            if gp == 1: ds["poles"] += 1
+            if gp <= 2: ds["front_rows"] += 1
+            ds.setdefault("quali_results", []).append(entry)
 
     # --- Team stats ---
     team_stats = {}
@@ -1818,6 +2060,8 @@ def historical_stats():
     quali_h2h = {}
     team_quali = defaultdict(lambda: defaultdict(list))
     for r in quali_rows:
+        if r.get("session_type", "qualifying") == "sprint_quali":
+            continue
         team = r.get("team", "?")
         rd = r.get("round", "")
         team_quali[team][rd].append(r)
