@@ -2618,8 +2618,133 @@ def import_notes():
 
 @app.route("/api/headlines", methods=["GET"])
 def get_headlines():
-    """Stub — headline scraping not available on this deployment."""
-    return jsonify([])
+    """Fetch latest F1 headlines from motorsport news RSS feeds + scraped sites."""
+    import xml.etree.ElementTree as ET
+    from email.utils import parsedate_to_datetime, format_datetime as _fmt_dt
+    from bs4 import BeautifulSoup
+    import requests as req
+
+    _HEADLINE_SOURCE_ALIASES = {
+        'motorsport.de': 'de.motorsport.com',
+        'soymotorsport.es': 'soymotor.com',
+    }
+    FEEDS = {
+        'the-race.com':      'https://www.the-race.com/feed/',
+        'autosport.com':     'https://www.autosport.com/rss/f1/news',
+        'motorsport.com':    'https://www.motorsport.com/rss/f1/news/',
+        'formula1.com':      'https://www.formula1.com/content/fom-website/en/latest/all.xml',
+        'racer.com':         'https://racer.com/f1/feed/',
+        'autoracer.it':      'https://autoracer.it/feed/',
+        'it.motorsport.com': 'https://it.motorsport.com/rss/f1/news/',
+        'de.motorsport.com': 'https://de.motorsport.com/rss/f1/news/',
+        'motorsportweek.com':'https://www.motorsportweek.com/feed/',
+        'planetf1.com':      'https://www.planetf1.com/feed/',
+        'crash.net':         'https://www.crash.net/rss/f1',
+        'gpfans.com':        'https://www.gpfans.com/en/rss.xml',
+    }
+    REGEX_FEEDS = {
+        'formulatecnica.it': 'https://formulatecnica.it/feed/',
+    }
+    SCRAPE_SITES = {
+        'motorsport-total.com': 'https://www.motorsport-total.com/formel-1/news',
+        'motorsportmagazine.com': 'https://www.motorsportmagazine.com/articles/single-seaters/formula-1/',
+        'auto-motor-und-sport.de': 'https://www.auto-motor-und-sport.de/formel-1/',
+        'soymotor.com': 'https://soymotor.com/f1',
+    }
+    ua = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36'}
+    raw_source = (request.args.get('source', '') or '').strip()
+    source_filter = _HEADLINE_SOURCE_ALIASES.get(raw_source, raw_source)
+    limit = min(int(request.args.get('limit', 10)), 60)
+    all_items = []
+
+    # Standard RSS feeds
+    for domain, feed_url in FEEDS.items():
+        if source_filter and source_filter != domain:
+            continue
+        try:
+            r = req.get(feed_url, headers=ua, timeout=8)
+            root = ET.fromstring(r.content)
+            for item in root.findall('.//item'):
+                title_el = item.find('title')
+                link_el = item.find('link')
+                date_el = item.find('pubDate')
+                desc_el = item.find('description')
+                title = title_el.text.strip() if title_el is not None and title_el.text else ''
+                link = (link_el.text.strip() if link_el is not None and link_el.text else '')
+                pub = date_el.text.strip() if date_el is not None and date_el.text else ''
+                desc = ''
+                if desc_el is not None and desc_el.text:
+                    desc = BeautifulSoup(desc_el.text, 'html.parser').get_text()[:200]
+                if title and link:
+                    all_items.append({'title': title, 'url': link, 'date': pub, 'description': desc, 'source': domain})
+        except Exception:
+            continue
+
+    # Regex-parsed RSS feeds (HTML-wrapped XML)
+    for domain, feed_url in REGEX_FEEDS.items():
+        if source_filter and source_filter != domain:
+            continue
+        try:
+            r = req.get(feed_url, headers=ua, timeout=8)
+            from html import unescape as _unescape
+            for raw_item in re.findall(r'<item>(.*?)</item>', r.text, re.DOTALL):
+                m_title = re.search(r'<title>(.*?)</title>', raw_item)
+                m_link = re.search(r'<link>(.*?)[\n<]', raw_item)
+                m_date = re.search(r'<pubDate>(.*?)</pubDate>', raw_item, re.IGNORECASE)
+                m_desc = re.search(r'<description>(.*?)</description>', raw_item, re.DOTALL)
+                title = _unescape(m_title.group(1).strip()) if m_title else ''
+                link = m_link.group(1).strip() if m_link else ''
+                pub = m_date.group(1).strip() if m_date else ''
+                desc = _unescape(BeautifulSoup(m_desc.group(1), 'html.parser').get_text()[:200]) if m_desc else ''
+                if title and link:
+                    all_items.append({'title': title, 'url': link, 'date': pub, 'description': desc, 'source': domain})
+        except Exception:
+            continue
+
+    # Scraped sites (no RSS)
+    SCRAPE_LINK_FILTER = {
+        'motorsport-total.com': lambda href: '/news/' in href and 'news/grand-prix' not in href and 'news/boulevard' not in href,
+        'motorsportmagazine.com': lambda href: '/articles/' in href and ('formula-1' in href or '/f1/' in href),
+        'auto-motor-und-sport.de': lambda href: '/formel-1/' in href and href.count('/') >= 3 and href != '/formel-1/',
+        'soymotor.com': lambda href: '/f1/noticias/' in href,
+    }
+    SCRAPE_BASE = {
+        'motorsport-total.com': 'https://www.motorsport-total.com',
+        'motorsportmagazine.com': 'https://www.motorsportmagazine.com',
+        'auto-motor-und-sport.de': 'https://www.auto-motor-und-sport.de',
+        'soymotor.com': 'https://soymotor.com',
+    }
+    for domain, page_url in SCRAPE_SITES.items():
+        if source_filter and source_filter != domain:
+            continue
+        try:
+            r = req.get(page_url, headers=ua, timeout=8)
+            soup = BeautifulSoup(r.text, 'html.parser')
+            seen = set()
+            link_ok = SCRAPE_LINK_FILTER.get(domain, lambda h: '/news/' in h or '/article' in h)
+            base = SCRAPE_BASE.get(domain, '')
+            _now_rfc = _fmt_dt(dt.datetime.now(dt.timezone.utc))
+            for a in soup.find_all('a', href=True):
+                href = a['href']
+                t = a.get_text(strip=True)
+                if len(t) > 25 and link_ok(href) and href not in seen:
+                    seen.add(href)
+                    url = href if href.startswith('http') else base + href
+                    all_items.append({'title': t, 'url': url, 'date': _now_rfc, 'description': '', 'source': domain})
+                if len(seen) >= 12:
+                    break
+        except Exception:
+            continue
+
+    # Sort by date descending
+    def sort_key(item):
+        try:
+            return parsedate_to_datetime(item['date'])
+        except Exception:
+            return dt.datetime.min.replace(tzinfo=dt.timezone.utc)
+    all_items.sort(key=sort_key, reverse=True)
+
+    return jsonify(all_items[:limit])
 
 @app.route("/api/article_body", methods=["POST"])
 def get_article_body():
