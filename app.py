@@ -704,6 +704,8 @@ def test_top_speeds():
 
 
 _LOCATION_CACHE = {}
+_LIVE_LOC_CACHE = {}
+_LIVE_LOC_CACHE_TTL = 1.5
 
 @app.route("/api/test_telemetry/location", methods=["GET"])
 def test_location():
@@ -755,6 +757,11 @@ def live_locations_batch():
         return jsonify({"error": "no valid driver numbers"}), 400
     dns = dns[:24]
 
+    cache_key = f"{sk}|{','.join(sorted(dns))}|{since}|{until}|{windowEnd}"
+    cached = _LIVE_LOC_CACHE.get(cache_key)
+    if cached and (time.time() - cached["ts"]) < _LIVE_LOC_CACHE_TTL:
+        return jsonify(cached["data"])
+
     base_params = {"session_key": sk}
     if since:
         base_params["date>"] = since
@@ -768,7 +775,7 @@ def live_locations_batch():
                 end = _dt.datetime.now(_dt.timezone.utc)
         except Exception:
             end = _dt.datetime.now(_dt.timezone.utc)
-        start = end - _dt.timedelta(seconds=10)
+        start = end - _dt.timedelta(seconds=4)
         base_params["date>"] = start.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "+00:00"
         base_params["date<"] = end.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "+00:00"
 
@@ -793,16 +800,20 @@ def live_locations_batch():
             return {"driver_number": int(dn), "points": [], "error": str(e)}
 
     results = []
-    with ThreadPoolExecutor(max_workers=10) as executor:
+    with ThreadPoolExecutor(max_workers=min(20, len(dns))) as executor:
         results = list(executor.map(fetch_dn, dns))
 
     if auth_problem[0]:
-        return jsonify({
+        payload = {
             "error": "OpenF1 requires authentication during live sessions. Please log in above.",
             "auth_required": True,
             "drivers": results,
-        }), 401
-    return jsonify({"drivers": results})
+        }
+        return jsonify(payload), 401
+
+    payload = {"drivers": results}
+    _LIVE_LOC_CACHE[cache_key] = {"ts": time.time(), "data": payload}
+    return jsonify(payload)
 
 
 # ══════════════════════════════════════════════════════════════════════════════

@@ -636,7 +636,7 @@ canvas{display:block;width:100%}
 .circuit-flag-badge.green{background:#15803d;color:#fff}
 .circuit-flag-badge.sector{background:rgba(234,179,8,.2);color:var(--yellow);border:1px solid rgba(234,179,8,.4)}
 .circuit-map-canvas-wrap{width:100%;border-radius:var(--radius);border:1px solid var(--border);background:var(--surface2);overflow:hidden}
-#circuit-map-canvas{display:block;width:100%;height:300px;cursor:crosshair}
+#circuit-map-canvas{display:block;width:100%;height:400px;cursor:crosshair}
 .circuit-map-meta{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-top:8px;font-size:10px;color:var(--text2);line-height:1.35}
 </style>
 </head>
@@ -943,15 +943,17 @@ let STATE={
   rpdChart:"box",           // "box", "violin", or "both"
   // Live circuit map (OpenF1 x/y projection)
   circuitMapTimer:null,
+  circuitMapAnimFrame:null,
   circuitMapTrack:[],
   circuitMapTrackSet:null,
   circuitMapLastSince:null,
   circuitPositions:{},
+  circuitMapInterp:{},
+  circuitMapTrails:{},
+  circuitMapPulse:{},
   circuitMapEmptyStreak:0,
   circuitMapFetchBusy:false,
   circuitMapEnabled:false,
-  circuitMapDriverCursor:0,
-  circuitMapBatchSize:6,
   sectorTraceEnabled:true,
 };
 let TELEM_CACHE={};
@@ -1303,6 +1305,9 @@ function replayRenderCurrentLap(){
       if(STATE._replayPrevLap!=null&&lap<STATE._replayPrevLap){
         STATE.circuitMapLastSince=null;
         STATE.circuitPositions={};
+        STATE.circuitMapInterp={};
+        STATE.circuitMapTrails={};
+        STATE.circuitMapPulse={};
       }
       STATE._replayPrevLap=lap;
       tickCircuitMap(endIso);
@@ -1807,10 +1812,10 @@ function renderSessionView(){
       <div class="panel-body circuit-map-panel-body">
         <div class="circuit-flag-strip" id="circuit-flag-strip"></div>
         <div class="circuit-map-canvas-wrap">
-          <canvas id="circuit-map-canvas" width="800" height="300"></canvas>
+          <canvas id="circuit-map-canvas" width="800" height="400"></canvas>
         </div>
         <div class="circuit-map-meta">
-          <span id="circuit-map-hint">Positions from OpenF1 location (approximate track frame). Yellow flags, SC, and VSC reflect race control messages.</span>
+          <span id="circuit-map-hint">Live positions (~1.5s refresh). Yellow flags, SC, and VSC reflect race control messages.</span>
           <span id="circuit-map-status" style="text-align:right;white-space:nowrap"></span>
         </div>
       </div>
@@ -2456,7 +2461,12 @@ function togglePanel(id){
   if(!el)return;
   const wasCollapsed=el.classList.contains("collapsed");
   el.classList.toggle("collapsed");
-  if(id==="circuit-map-panel"&&wasCollapsed&&STATE.circuitMapEnabled){updateCircuitMapBanner();tickCircuitMap();}
+  if(id==="circuit-map-panel"&&wasCollapsed&&STATE.circuitMapEnabled){
+    updateCircuitMapBanner();
+    startCircuitMapAnim();
+    scheduleCircuitMapTick();
+    tickCircuitMap();
+  }
 }
 
 /* ══════════════════════════════════════════════════════════════════════════════
@@ -2498,14 +2508,35 @@ function toggleSectorTrace(){
 }
 
 function stopCircuitMapLoop(){
-  if(STATE.circuitMapTimer){clearInterval(STATE.circuitMapTimer);STATE.circuitMapTimer=null;}
+  if(STATE.circuitMapTimer){clearTimeout(STATE.circuitMapTimer);STATE.circuitMapTimer=null;}
+  if(STATE.circuitMapAnimFrame){cancelAnimationFrame(STATE.circuitMapAnimFrame);STATE.circuitMapAnimFrame=null;}
   STATE.circuitMapTrack=[];
   STATE.circuitMapTrackSet=null;
   STATE.circuitMapLastSince=null;
   STATE.circuitPositions={};
+  STATE.circuitMapInterp={};
+  STATE.circuitMapTrails={};
+  STATE.circuitMapPulse={};
   STATE.circuitMapEmptyStreak=0;
   STATE.circuitMapFetchBusy=false;
-  STATE.circuitMapDriverCursor=0;
+}
+function isCircuitMapLiveSession(){
+  const s=STATE.activeSession;
+  if(!s)return false;
+  if(s.date_end){
+    const end=new Date(s.date_end).getTime();
+    if(end<Date.now())return false;
+  }
+  if(s.date_start){
+    const start=new Date(s.date_start).getTime();
+    if(start>Date.now())return false;
+  }
+  return true;
+}
+function getCircuitMapPollMs(){
+  if(!isCircuitMapLiveSession())return 8000;
+  if((STATE.circuitMapEmptyStreak||0)>=3)return 5000;
+  return 1500;
 }
 function getCircuitMapWindowEnd(){
   const s=STATE.activeSession;
@@ -2514,6 +2545,72 @@ function getCircuitMapWindowEnd(){
     if(end<Date.now())return s.date_end;
   }
   return new Date().toISOString();
+}
+function _hexAlpha(hex,alpha){
+  if(!hex||!hex.startsWith("#"))return hex;
+  const h=hex.replace("#","");
+  const full=h.length===3?h.split("").map(c=>c+c).join(""):h;
+  if(full.length<6)return hex;
+  const r=parseInt(full.slice(0,2),16);
+  const g=parseInt(full.slice(2,4),16);
+  const b=parseInt(full.slice(4,6),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+function _circuitDisplayXY(dn,p){
+  const interp=STATE.circuitMapInterp[dn];
+  if(!interp)return{x:p.x,y:p.y};
+  const t=Math.min(1,(performance.now()-interp.start)/interp.duration);
+  const ease=t*t*(3-2*t);
+  return{
+    x:interp.fromX+(interp.toX-interp.fromX)*ease,
+    y:interp.fromY+(interp.toY-interp.fromY)*ease
+  };
+}
+function _circuitUpdateDriverPosition(dn,best,info){
+  const now=performance.now();
+  const prev=STATE.circuitPositions[dn];
+  const pollMs=getCircuitMapPollMs();
+  if(prev&&prev.x!=null&&prev.y!=null){
+    const disp=_circuitDisplayXY(dn,prev);
+    STATE.circuitMapInterp[dn]={
+      fromX:disp.x,fromY:disp.y,
+      toX:best.x,toY:best.y,
+      start:now,
+      duration:Math.max(900,pollMs*0.92)
+    };
+    const trail=STATE.circuitMapTrails[dn]||(STATE.circuitMapTrails[dn]=[]);
+    trail.push({x:best.x,y:best.y});
+    while(trail.length>4)trail.shift();
+    STATE.circuitMapPulse[dn]=now;
+  }else{
+    delete STATE.circuitMapInterp[dn];
+  }
+  STATE.circuitPositions[dn]={
+    x:best.x,y:best.y,z:best.z,date:best.date,
+    acronym:info.acronym||("#"+dn),
+    team:info.team_name||info.team||""
+  };
+}
+function scheduleCircuitMapTick(){
+  if(STATE.circuitMapTimer){clearTimeout(STATE.circuitMapTimer);STATE.circuitMapTimer=null;}
+  if(!STATE.circuitMapEnabled||STATE.replayActive)return;
+  const panel=document.getElementById("circuit-map-panel");
+  if(panel&&panel.classList.contains("collapsed"))return;
+  const ms=getCircuitMapPollMs();
+  STATE.circuitMapTimer=setTimeout(async()=>{
+    await tickCircuitMap();
+    scheduleCircuitMapTick();
+  },ms);
+}
+function startCircuitMapAnim(){
+  if(STATE.circuitMapAnimFrame){cancelAnimationFrame(STATE.circuitMapAnimFrame);STATE.circuitMapAnimFrame=null;}
+  function frame(){
+    if(!STATE.circuitMapEnabled)return;
+    const panel=document.getElementById("circuit-map-panel");
+    if(panel&&!panel.classList.contains("collapsed"))drawCircuitMap();
+    STATE.circuitMapAnimFrame=requestAnimationFrame(frame);
+  }
+  STATE.circuitMapAnimFrame=requestAnimationFrame(frame);
 }
 function computeCircuitBannerState(){
   const msgs=(STATE.sessionData?.race_control||[]).slice().sort((a,b)=>(a.date||"").localeCompare(b.date||""));
@@ -2587,18 +2684,13 @@ async function tickCircuitMap(replayWindowEnd=null){
     const sk=String(STATE.activeSession.session_key);
     const allDns=Object.keys(STATE.sessionData.drivers||{}).map(Number).filter(n=>!isNaN(n)).sort((a,b)=>a-b);
     if(!allDns.length)return;
-    const bs=Math.max(2,Math.min(8,STATE.circuitMapBatchSize||6));
-    const start=STATE.circuitMapDriverCursor||0;
-    const dns=[];
-    for(let i=0;i<Math.min(bs,allDns.length);i++)dns.push(allDns[(start+i)%allDns.length]);
-    STATE.circuitMapDriverCursor=(start+dns.length)%allDns.length;
 
-    const qs=new URLSearchParams({session_key:sk,drivers:dns.join(",")});
+    const qs=new URLSearchParams({session_key:sk,drivers:allDns.join(",")});
     const since=STATE.circuitMapLastSince;
     if(replayWindowEnd){
       qs.set("window_end",replayWindowEnd);
     }else if(since){
-      const t=new Date(since);t.setMilliseconds(t.getMilliseconds()-1200);
+      const t=new Date(since);t.setMilliseconds(t.getMilliseconds()-800);
       qs.set("since",t.toISOString());
     }else{
       qs.set("window_end",getCircuitMapWindowEnd());
@@ -2629,7 +2721,7 @@ async function tickCircuitMap(replayWindowEnd=null){
       });
       if(best&&best.x!=null&&best.y!=null){
         const info=(STATE.sessionData.drivers||{})[dn]||{};
-        STATE.circuitPositions[dn]={x:best.x,y:best.y,z:best.z,date:best.date,acronym:info.acronym||"#"+dn,team:info.team_name||info.team||""};
+        _circuitUpdateDriverPosition(dn,best,info);
         if(!maxTs||best.date>maxTs)maxTs=best.date;
       }
     });
@@ -2641,8 +2733,11 @@ async function tickCircuitMap(replayWindowEnd=null){
       if(STATE.circuitMapEmptyStreak>=6){STATE.circuitMapLastSince=null;STATE.circuitMapEmptyStreak=0;}
     }
     const st=document.getElementById("circuit-map-status");
-    if(st)st.textContent=`${Object.keys(STATE.circuitPositions).length}/${allDns.length} drivers · ${new Date().toLocaleTimeString()}`;
-    drawCircuitMap();
+    if(st){
+      const mode=isCircuitMapLiveSession()?"live":"replay";
+      const poll=getCircuitMapPollMs();
+      st.textContent=`${Object.keys(STATE.circuitPositions).length}/${allDns.length} drivers · ${mode} · ${poll/1000}s · ${new Date().toLocaleTimeString()}`;
+    }
   }catch(e){
     console.warn("circuit map:",e);
   }finally{
@@ -2654,7 +2749,7 @@ function drawCircuitMap(){
   if(!canvas)return;
   const wrap=canvas.parentElement;
   const cssW=wrap.clientWidth||640;
-  const cssH=300;
+  const cssH=400;
   const dpr=Math.min(window.devicePixelRatio||1,2);
   canvas.style.width=cssW+"px";
   canvas.style.height=cssH+"px";
@@ -2668,7 +2763,11 @@ function drawCircuitMap(){
   ctx.fillRect(0,0,W,H);
   const track=STATE.circuitMapTrack||[];
   const pos=STATE.circuitPositions||{};
-  const posPts=Object.values(pos).map(p=>({x:p.x,y:p.y}));
+  const posPts=Object.keys(pos).map(dn=>{
+    const p=pos[dn];
+    const d=_circuitDisplayXY(dn,p);
+    return{x:d.x,y:d.y};
+  });
   const all=track.concat(posPts);
   if(!STATE.circuitMapEnabled){
     ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue("--text2").trim()||"#888";
@@ -2679,7 +2778,7 @@ function drawCircuitMap(){
   if(!all.length){
     ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue("--text2").trim()||"#888";
     ctx.font="12px system-ui,sans-serif";
-    ctx.fillText("Loading positions… (sampled in lightweight batches)",14,24);
+    ctx.fillText("Loading positions…",14,24);
     return;
   }
   let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
@@ -2710,20 +2809,43 @@ function drawCircuitMap(){
     ctx.lineWidth=10;
     ctx.strokeRect(4,4,W-8,H-8);
   }
+  const now=performance.now();
   Object.keys(pos).sort((a,b)=>Number(a)-Number(b)).forEach(dns=>{
     const p=pos[dns];
-    const cx=tx(p.x),cy=ty(p.y);
     const col=teamColor(p.team||"");
+    const disp=_circuitDisplayXY(dns,p);
+    const cx=tx(disp.x),cy=ty(disp.y);
+  const trail=(STATE.circuitMapTrails[dns]||[]).slice(0,-1);
+    trail.forEach((tp,i)=>{
+      const alpha=0.18+0.22*(i/Math.max(1,trail.length));
+      ctx.fillStyle=_hexAlpha(col,alpha);
+      ctx.beginPath();
+      ctx.arc(tx(tp.x),ty(tp.y),3.5,0,Math.PI*2);
+      ctx.fill();
+    });
+    const pulseStart=STATE.circuitMapPulse[dns];
+    if(pulseStart){
+      const age=now-pulseStart;
+      if(age<700){
+        const pr=7+age*0.04;
+        const pa=0.45*(1-age/700);
+        ctx.strokeStyle=_hexAlpha(col,pa);
+        ctx.lineWidth=2;
+        ctx.beginPath();
+        ctx.arc(cx,cy,pr,0,Math.PI*2);
+        ctx.stroke();
+      }
+    }
     ctx.fillStyle=col;
     ctx.beginPath();
-    ctx.arc(cx,cy,5,0,Math.PI*2);
+    ctx.arc(cx,cy,7,0,Math.PI*2);
     ctx.fill();
-    ctx.strokeStyle="rgba(0,0,0,.45)";
-    ctx.lineWidth=1;
+    ctx.strokeStyle="rgba(0,0,0,.55)";
+    ctx.lineWidth=1.5;
     ctx.stroke();
-    ctx.fillStyle=getComputedStyle(document.documentElement).getPropertyValue("--text").trim()||"#fff";
-    ctx.font="700 9px system-ui,sans-serif";
-    ctx.fillText(p.acronym||dns,cx+8,cy+3);
+    ctx.fillStyle="#fff";
+    ctx.font="800 10px system-ui,sans-serif";
+    ctx.fillText(p.acronym||dns,cx+10,cy+4);
   });
 }
 function initCircuitMapPanel(){
@@ -2733,6 +2855,9 @@ function initCircuitMapPanel(){
   STATE.circuitMapTrack=[];
   STATE.circuitMapTrackSet=new Set();
   STATE.circuitPositions={};
+  STATE.circuitMapInterp={};
+  STATE.circuitMapTrails={};
+  STATE.circuitMapPulse={};
   updateCircuitMapBanner();
   updateCircuitMapUI();
   drawCircuitMap();
@@ -2745,7 +2870,8 @@ function initCircuitMapPanel(){
     });
   }
   if(!STATE.circuitMapEnabled)return;
-  STATE.circuitMapTimer=setInterval(()=>{if(!STATE.replayActive&&STATE.circuitMapEnabled)tickCircuitMap();},8000);
+  startCircuitMapAnim();
+  scheduleCircuitMapTick();
   tickCircuitMap();
 }
 
