@@ -33,14 +33,85 @@ else:
     _HIST_DIR = os.path.join(STATIC_DIR, "data", "historical")
 NOTES_PATH = os.path.join(DATA_DIR, "notes.json")
 
+NOTES_UI_DIR = os.path.join(STATIC_DIR, "notes_ui")
+
 os.makedirs(DOCS_DIR, exist_ok=True)
 os.makedirs(_HIST_DIR, exist_ok=True)
 os.makedirs(DATA_DIR, exist_ok=True)
+os.makedirs(NOTES_UI_DIR, exist_ok=True)
 
 # Create notes.json if it doesn't exist
 if not os.path.exists(NOTES_PATH):
     with open(NOTES_PATH, "w") as f:
         json.dump({"notes": []}, f)
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# F1 NOTES — loading, caching, helpers
+# ══════════════════════════════════════════════════════════════════════════════
+DATE_FMT = "%Y-%m-%d"
+_NOTES = []
+_SKIPPED_ON_LOAD = []
+_LOAD_ERROR = None
+_LAST_NOTES_LOAD = 0
+_NOTES_LOCK = Lock()
+
+
+def _parse_date_safe(s):
+    if isinstance(s, str):
+        try:
+            return dt.datetime.strptime(s.strip(), DATE_FMT)
+        except ValueError:
+            return dt.datetime.min
+    return dt.datetime.min
+
+
+def _is_note_like(obj):
+    return isinstance(obj, dict) and "title" in obj and "date" in obj
+
+
+def _flatten_wrappers(raw_items):
+    notes, skipped = [], []
+    for item in raw_items:
+        if _is_note_like(item):
+            notes.append(item)
+        elif isinstance(item, dict) and len(item) == 1:
+            (_, val), = item.items()
+            if isinstance(val, list):
+                for sub in val:
+                    (notes if _is_note_like(sub) else skipped).append(sub)
+            else:
+                skipped.append(item)
+        else:
+            skipped.append(item)
+    return notes, skipped
+
+
+def _load_notes_file(path):
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+    if isinstance(data, dict) and "notes" in data and isinstance(data["notes"], list):
+        raw = data["notes"]
+    elif isinstance(data, list):
+        raw = data
+    else:
+        raw = [data]
+    return _flatten_wrappers(raw)
+
+
+def _get_latest_notes():
+    global _NOTES, _SKIPPED_ON_LOAD, _LOAD_ERROR, _LAST_NOTES_LOAD
+    try:
+        mtime = os.path.getmtime(NOTES_PATH)
+        if mtime > _LAST_NOTES_LOAD:
+            _NOTES, _SKIPPED_ON_LOAD = _load_notes_file(NOTES_PATH)
+            _LAST_NOTES_LOAD = mtime
+            _LOAD_ERROR = None
+    except FileNotFoundError:
+        _NOTES, _LOAD_ERROR = [], None
+    except Exception as e:
+        _LOAD_ERROR = str(e)
+    return _NOTES
 
 _APP_CONFIG_PATH = os.path.join(BASE_DIR, ".app_config.json")
 
@@ -1794,19 +1865,24 @@ def notes_from_ai_insight():
     }
 
     if save:
-        try:
-            with open(NOTES_PATH, "r", encoding="utf-8") as f:
-                notes_data = json.load(f)
-        except:
-            notes_data = {"notes": []}
-        if isinstance(notes_data, dict) and "notes" in notes_data:
-            notes_data["notes"].insert(0, note)
-        elif isinstance(notes_data, list):
-            notes_data.insert(0, note)
-        else:
-            notes_data = {"notes": [note]}
-        with open(NOTES_PATH, "w", encoding="utf-8") as f:
-            json.dump(notes_data, f, ensure_ascii=False, indent=2)
+        with _NOTES_LOCK:
+            try:
+                with open(NOTES_PATH, "r", encoding="utf-8") as f:
+                    notes_data = json.load(f)
+            except Exception:
+                notes_data = {"notes": []}
+            if isinstance(notes_data, dict) and "notes" in notes_data:
+                notes_data["notes"].insert(0, note)
+            elif isinstance(notes_data, list):
+                notes_data.insert(0, note)
+            else:
+                notes_data = {"notes": [note]}
+            tmp = NOTES_PATH + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(notes_data, f, ensure_ascii=False, indent=2)
+            os.replace(tmp, NOTES_PATH)
+        global _LAST_NOTES_LOAD
+        _LAST_NOTES_LOAD = 0
 
     return jsonify({"ok": True, "note": note, "saved": save})
 
@@ -2190,11 +2266,306 @@ def save_api_keys():
 
 
 # ══════════════════════════════════════════════════════════════════════════════
+# F1 NOTES — API routes
+# ══════════════════════════════════════════════════════════════════════════════
+@app.route("/f1notes")
+@app.route("/f1notes/")
+def serve_f1notes():
+    return send_from_directory(NOTES_UI_DIR, "index.html")
+
+
+@app.route("/f1notes/<path:filename>")
+def serve_f1notes_file(filename):
+    fpath = os.path.join(NOTES_UI_DIR, filename)
+    if os.path.isfile(fpath):
+        return send_from_directory(NOTES_UI_DIR, filename)
+    return send_from_directory(NOTES_UI_DIR, "index.html")
+
+
+@app.route("/api/notes", methods=["GET"])
+@app.route("/notes", methods=["GET"])
+def get_notes():
+    current_notes = _get_latest_notes()
+    if _LOAD_ERROR:
+        return jsonify({"notes": [], "error": _LOAD_ERROR}), 500
+
+    results = list(current_notes)
+    args = request.args
+
+    team = (args.get("team") or "").strip()
+    personnel = (args.get("personnel") or "").strip()
+    start_date = (args.get("start_date") or "").strip()
+    end_date = (args.get("end_date") or "").strip()
+    keyword = (args.get("keyword") or "").strip()
+    sort = (args.get("sort") or "").strip().lower()
+    tags = [t.strip() for t in (args.get("tags") or "").split(",") if t.strip()]
+    tags_mode = (args.get("tags_mode") or "any").lower()
+    debug = (args.get("debug") or "0").strip() in ("1", "true", "yes")
+
+    if team:
+        def _team_match(n):
+            t = n.get("team", "")
+            if isinstance(t, list):
+                return any(team.lower() == x.lower() for x in t)
+            return (t or "").lower() == team.lower()
+        results = [n for n in results if _team_match(n)]
+    if personnel:
+        needle = personnel.lower()
+        results = [n for n in results if any(needle in p.lower() for p in n.get("personnel", []))]
+    if start_date:
+        try:
+            sd = dt.datetime.strptime(start_date, DATE_FMT)
+            results = [n for n in results if _parse_date_safe(n.get("date")) >= sd]
+        except ValueError:
+            pass
+    if end_date:
+        try:
+            ed = dt.datetime.strptime(end_date, DATE_FMT)
+            results = [n for n in results if _parse_date_safe(n.get("date")) <= ed]
+        except ValueError:
+            pass
+    if keyword:
+        def _all_text(obj):
+            if isinstance(obj, str): return obj
+            if isinstance(obj, list): return " ".join(_all_text(i) for i in obj)
+            if isinstance(obj, dict): return " ".join(_all_text(v) for v in obj.values())
+            return ""
+        terms = keyword.lower().split()
+        results = [n for n in results if all(t in _all_text(n).lower() for t in terms)]
+    if tags:
+        def _has(nt, sel, mode):
+            s = {t.lower() for t in (nt or [])}
+            return (all if mode == "all" else any)(t.lower() in s for t in sel)
+        results = [n for n in results if _has(n.get("tags", []), tags, tags_mode)]
+
+    sort_field = (args.get("sort_by") or "date").strip().lower()
+    if sort in ("asc", "desc"):
+        rev = sort == "desc"
+        if sort_field == "saved_at":
+            results.sort(key=lambda n: n.get("saved_at") or n.get("date") or "", reverse=rev)
+        else:
+            results.sort(key=lambda n: _parse_date_safe(n.get("date")), reverse=rev)
+
+    payload = {"notes": results}
+    if debug:
+        payload["skipped_on_load"] = _SKIPPED_ON_LOAD
+    return jsonify(payload)
+
+
+@app.route("/api/notes/save", methods=["POST"])
+def save_note():
+    try:
+        note = request.get_json(force=True)
+        if not note or not isinstance(note, dict):
+            return jsonify({"error": "Invalid note data"}), 400
+        required = ["title", "date", "team", "content"]
+        missing = [k for k in required if k not in note]
+        if missing:
+            return jsonify({"error": f"Missing fields: {', '.join(missing)}"}), 400
+
+        if not note.get("id"):
+            slug = re.sub(r'[^a-z0-9]+', '-', note["title"].lower()).strip('-')[:60]
+            note["id"] = f"{slug}-{note['date']}"
+
+        with _NOTES_LOCK:
+            with open(NOTES_PATH, "r", encoding="utf-8") as f:
+                data = json.load(f)
+            notes_list = data.get("notes", []) if isinstance(data, dict) else data
+
+            existing_ids = {n.get("id") for n in notes_list if isinstance(n, dict)}
+            if note["id"] in existing_ids:
+                return jsonify({"error": "Note with this ID already exists", "id": note["id"]}), 409
+
+            if not note.get("saved_at"):
+                note["saved_at"] = dt.datetime.now().strftime("%Y-%m-%d %H:%M")
+
+            notes_list.insert(0, note)
+            out = {"notes": notes_list} if isinstance(data, dict) else notes_list
+            tmp = NOTES_PATH + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(out, f, ensure_ascii=False, indent=2)
+            os.replace(tmp, NOTES_PATH)
+
+        global _LAST_NOTES_LOAD
+        _LAST_NOTES_LOAD = 0
+        return jsonify({"ok": True, "id": note["id"]})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+_NOTES_TEXT_PROMPT = """You are an expert F1 technical analyst and journalist. Convert the following raw/plain text into a structured F1 technical note.
+
+Today's date: {today}
+{extra}
+
+--- RAW TEXT ---
+{raw_text}
+--- END TEXT ---
+
+Output ONLY valid JSON (no markdown fences, no extra text) with this exact structure:
+{{
+  "id": "<slug-based-on-title-and-date>",
+  "title": "<descriptive analytical title summarizing the content>",
+  "date": "{today}",
+  "team": "<team name or 'Multi-Team' or 'F1'>",
+  "tags": ["<relevant technical tags>"],
+  "personnel": ["<relevant people mentioned>"],
+  "content": ["<analytical paragraphs>"],
+  "table": [["Header1","Header2","Header3","Header4"],["row1col1","row1col2","row1col3","row1col4"]],
+  "discussion_points": ["<analytical questions arising from the content>"]
+}}
+
+Guidelines:
+- Clean up the raw text and produce a thorough, expert-level F1 technical analysis (5-8 paragraphs minimum).
+- Include Turkish translations of key F1 technical terms in parentheses on first use.
+- Tags should include both English and Turkish equivalents.
+- The table should summarize key data points.
+- discussion_points should pose 3-5 insightful analytical questions.
+- If multiple teams are discussed, set team to "Multi-Team".
+- Output ONLY the JSON object, nothing else."""
+
+
+@app.route("/api/notes/from_text", methods=["POST"])
+def notes_from_text():
+    """Convert plain text into a structured F1 note via Gemini or Claude."""
+    try:
+        data = request.get_json(force=True)
+        provider = (data.get("provider") or "gemini").strip().lower()
+        raw_text = (data.get("text") or "").strip()
+        extra_context = (data.get("context") or "").strip()
+
+        if not raw_text or len(raw_text) < 20:
+            return jsonify({"error": "Please provide at least a few sentences of text."}), 400
+        if len(raw_text) > 20000:
+            raw_text = raw_text[:20000] + "\n\n[...text truncated...]"
+
+        today = dt.datetime.now().strftime("%Y-%m-%d")
+        prompt = _NOTES_TEXT_PROMPT.format(
+            today=today,
+            raw_text=raw_text,
+            extra=("Additional context: " + extra_context) if extra_context else ""
+        )
+
+        note = None
+        if provider == "claude":
+            api_key = _get_claude_key()
+            if not api_key:
+                return jsonify({"error": "NO_KEY", "message": "Claude API key not configured."}), 400
+            content_text = _call_claude_for_prompt(api_key, prompt)
+            if content_text.startswith("```"):
+                content_text = re.sub(r'^```(?:json)?\s*', '', content_text)
+                content_text = re.sub(r'\s*```$', '', content_text)
+            note = json.loads(content_text)
+        else:
+            api_key = _get_gemini_key()
+            if not api_key:
+                return jsonify({"error": "NO_KEY", "message": "Gemini API key not configured."}), 400
+            import urllib.request as urlreq
+            import urllib.error
+            payload = {
+                "contents": [{"parts": [{"text": prompt}]}],
+                "generationConfig": {"temperature": 0.7, "maxOutputTokens": 8192, "responseMimeType": "application/json"}
+            }
+            payload_bytes = json.dumps(payload).encode("utf-8")
+            models = ["gemini-2.5-flash", "gemini-2.0-flash"]
+            last_err = None
+            for model in models:
+                api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+                for attempt in range(3):
+                    try:
+                        req = urlreq.Request(api_url, data=payload_bytes, headers={"Content-Type": "application/json"})
+                        with urlreq.urlopen(req, timeout=90) as resp:
+                            result = json.loads(resp.read().decode("utf-8"))
+                        ct = result["candidates"][0]["content"]["parts"][0]["text"].strip()
+                        if ct.startswith("```"):
+                            ct = re.sub(r'^```(?:json)?\s*', '', ct)
+                            ct = re.sub(r'\s*```$', '', ct)
+                        note = json.loads(ct)
+                        break
+                    except urllib.error.HTTPError as he:
+                        last_err = he
+                        if he.code in (429, 500, 503):
+                            time.sleep((attempt + 1) * 3)
+                            continue
+                        elif he.code == 404:
+                            break
+                        else:
+                            raise
+                    except json.JSONDecodeError:
+                        raise
+                    except Exception as ex:
+                        last_err = ex
+                        if attempt < 2:
+                            time.sleep(2)
+                            continue
+                        break
+                if note:
+                    break
+            if not note:
+                raise last_err or Exception("All Gemini models failed")
+
+        if not note.get("date"):
+            note["date"] = today
+        if not note.get("id"):
+            slug = re.sub(r'[^a-z0-9]+', '-', note.get("title", "text-note").lower()).strip('-')[:60]
+            note["id"] = f"{slug}-{note['date']}"
+
+        return jsonify({"ok": True, "note": note, "provider": provider})
+    except json.JSONDecodeError as e:
+        return jsonify({"error": f"AI returned invalid JSON: {str(e)}"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/notes/import", methods=["POST"])
+def import_notes():
+    """Bulk import notes from JSON upload (for initial population on deploy)."""
+    try:
+        data = request.get_json(force=True)
+        if not data:
+            return jsonify({"error": "No data"}), 400
+        incoming = data.get("notes", data) if isinstance(data, dict) else data
+        if not isinstance(incoming, list):
+            return jsonify({"error": "Expected {notes:[...]} or [...]"}), 400
+        valid = [n for n in incoming if _is_note_like(n)]
+        if not valid:
+            return jsonify({"error": "No valid notes found"}), 400
+
+        with _NOTES_LOCK:
+            try:
+                with open(NOTES_PATH, "r", encoding="utf-8") as f:
+                    existing = json.load(f)
+            except Exception:
+                existing = {"notes": []}
+            elist = existing.get("notes", []) if isinstance(existing, dict) else existing
+            existing_ids = {n.get("id") for n in elist if isinstance(n, dict)}
+            added = 0
+            for n in valid:
+                nid = n.get("id", "")
+                if nid and nid in existing_ids:
+                    continue
+                elist.insert(0, n)
+                existing_ids.add(nid)
+                added += 1
+            out = {"notes": elist}
+            tmp = NOTES_PATH + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(out, f, ensure_ascii=False, indent=2)
+            os.replace(tmp, NOTES_PATH)
+
+        global _LAST_NOTES_LOAD
+        _LAST_NOTES_LOAD = 0
+        return jsonify({"ok": True, "imported": added, "skipped_duplicates": len(valid) - added, "total": len(elist)})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+# ══════════════════════════════════════════════════════════════════════════════
 # HEALTH CHECK
 # ══════════════════════════════════════════════════════════════════════════════
 @app.route("/health")
 def health():
-    return jsonify({"status": "ok", "timestamp": time.time()})
+    return jsonify({"status": "ok", "timestamp": time.time(), "notes_count": len(_NOTES)})
 
 
 if __name__ == "__main__":
