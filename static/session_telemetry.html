@@ -1451,6 +1451,25 @@ async function loadSessions(){
   }catch(e){tabsEl.innerHTML=`<span style="color:var(--accent);font-size:12px">${esc(e.message)}</span>`;}
 }
 
+async function fetchSessionData(sk,{nocache=false}={}){
+  const qs=new URLSearchParams({session_key:String(sk)});
+  if(nocache)qs.set("nocache","1");
+  const r=await fetch(`/api/season/session_data?${qs}`);
+  return r.json();
+}
+
+async function loadSessionDataWithRetry(sk,sType){
+  let data=await fetchSessionData(sk);
+  if(data.error)return data;
+  const needsLaps=sType!=="practice";
+  for(let i=0;i<2&&needsLaps&&!(data.laps&&data.laps.length);i++){
+    await new Promise(r=>setTimeout(r,700*(i+1)));
+    data=await fetchSessionData(sk,{nocache:true});
+    if(data.error)return data;
+  }
+  return data;
+}
+
 async function selectSession(sess){
   // Highlight tab
   document.querySelectorAll(".session-tab").forEach((b,i)=>b.classList.toggle("active",STATE.sessions[i]===sess));
@@ -1479,9 +1498,12 @@ async function selectSession(sess){
   main.innerHTML='<div class="loading"><div class="spinner"></div>Loading session data...</div>';
   document.getElementById("status-bar").style.display="none";
   try{
-    const r=await fetch(`/api/season/session_data?session_key=${sess.session_key}`);
-    const data=await r.json();
+    const data=await loadSessionDataWithRetry(sess.session_key,STATE.sessionType);
     if(data.error){main.innerHTML=`<div class="empty-state">${esc(data.error)}</div>`;return;}
+    if(!(data.laps&&data.laps.length)&&STATE.sessionType!=="practice"){
+      main.innerHTML=`<div class="empty-state">Session data still loading from OpenF1 — try again in a few seconds.</div>`;
+      return;
+    }
     STATE.sessionData=data;
     renderSessionView();
     // Auto-save results to historical CSV in background
@@ -2869,17 +2891,24 @@ async function _rkFetchWeekendStints(){
   if(STATE.rkWeekendStints[mk])return;
   const sessions=STATE.sessions||[];
   const result={};
-  for(const sess of sessions){
+
+  async function fetchOne(sess){
     const sk=sess.session_key;
     const sName=sess.session_name||sess.session_type||"Unknown";
-    try{
-      const r=await fetch(`/api/season/session_data?session_key=${sk}`);
-      const data=await r.json();
-      if(!data.error){
-        result[sk]={name:sName,stints:data.stints||[],drivers:data.drivers||{}};
-      }
-    }catch(e){}
+    for(let attempt=0;attempt<2;attempt++){
+      try{
+        const data=await fetchSessionData(sk,{nocache:attempt>0});
+        if(!data.error&&(data.stints?.length||data.laps?.length)){
+          result[sk]={name:sName,stints:data.stints||[],drivers:data.drivers||{}};
+          return;
+        }
+      }catch(e){}
+      if(attempt===0)await new Promise(r=>setTimeout(r,500));
+    }
   }
+
+  // Fetch all weekend sessions in parallel (was sequential — race/quali loaded last)
+  await Promise.all(sessions.map(fetchOne));
   STATE.rkWeekendStints[mk]=result;
   renderRankingTable();
 }

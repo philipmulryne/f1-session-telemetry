@@ -299,16 +299,21 @@ def season_session_data():
     hdrs = _openf1_headers()
 
     # --- Parallel fetch all endpoints for lower latency ---
-    def _fetch(url, params, timeout=10):
-        try:
-            r = _req.get(url, params=params, headers=hdrs, timeout=timeout)
-            if r.status_code != 200:
-                return []
-            body = r.json()
-            # OpenF1 returns JSON arrays; error/wrapper objects must not replace lists with bogus types
-            return body if isinstance(body, list) else []
-        except Exception:
-            return []
+    def _fetch(url, params, timeout=10, retries=2):
+        for attempt in range(retries + 1):
+            try:
+                r = _req.get(url, params=params, headers=hdrs, timeout=timeout)
+                if r.status_code == 200:
+                    body = r.json()
+                    return body if isinstance(body, list) else []
+                if r.status_code in (429, 502, 503, 504) and attempt < retries:
+                    time.sleep(1.0 * (attempt + 1))
+                    continue
+            except Exception:
+                if attempt < retries:
+                    time.sleep(0.75 * (attempt + 1))
+                    continue
+        return []
 
     # On live refresh (nocache), reuse cached drivers to save time
     # Drivers don't change mid-session
@@ -320,15 +325,15 @@ def season_session_data():
     with ThreadPoolExecutor(max_workers=5) as executor:
         futures = {}
         if not prev_drivers:
-            futures["drivers"] = executor.submit(_fetch, f"{OPENF1}/drivers", {"session_key": sk}, 10)
-        futures["laps"] = executor.submit(_fetch, f"{OPENF1}/laps", {"session_key": sk}, 25)
-        futures["stints"] = executor.submit(_fetch, f"{OPENF1}/stints", {"session_key": sk}, 15)
-        futures["race_control"] = executor.submit(_fetch, f"{OPENF1}/race_control", {"session_key": sk}, 15)
-        futures["positions"] = executor.submit(_fetch, f"{OPENF1}/position", {"session_key": sk}, 25)
+            futures["drivers"] = executor.submit(_fetch, f"{OPENF1}/drivers", {"session_key": sk}, 12, 1)
+        futures["laps"] = executor.submit(_fetch, f"{OPENF1}/laps", {"session_key": sk}, 50, 2)
+        futures["stints"] = executor.submit(_fetch, f"{OPENF1}/stints", {"session_key": sk}, 20, 2)
+        futures["race_control"] = executor.submit(_fetch, f"{OPENF1}/race_control", {"session_key": sk}, 20, 1)
+        futures["positions"] = executor.submit(_fetch, f"{OPENF1}/position", {"session_key": sk}, 50, 2)
 
         for key, future in futures.items():
             try:
-                results[key] = future.result(timeout=40)
+                results[key] = future.result(timeout=65)
             except Exception:
                 results[key] = []
 
@@ -362,10 +367,9 @@ def season_session_data():
     if not isinstance(positions, list):
         positions = []
 
-    # Live refresh (nocache): OpenF1 sometimes returns [] on timeout/error while other
-    # endpoints succeed — do not wipe data the client already had.
+    # OpenF1 sometimes returns [] on timeout/error — keep last good snapshot when possible
+    prev_d = (cached.get("data") if cached else None) or {}
     if nocache and cached:
-        prev_d = cached.get("data") or {}
         if not laps and prev_d.get("laps"):
             laps = prev_d["laps"]
         if not stints and prev_d.get("stints"):
@@ -374,6 +378,15 @@ def season_session_data():
             race_control = prev_d["race_control"]
         if not positions and prev_d.get("positions"):
             positions = prev_d["positions"]
+    elif not nocache:
+        if not laps and prev_d.get("laps"):
+            laps = prev_d["laps"]
+        if not stints and prev_d.get("stints"):
+            stints = prev_d["stints"]
+        if not positions and prev_d.get("positions"):
+            positions = prev_d["positions"]
+        if not race_control and prev_d.get("race_control"):
+            race_control = prev_d["race_control"]
 
     result = {
         "session_key": int(sk), "drivers": drivers_map,
@@ -382,7 +395,13 @@ def season_session_data():
         "race_control": race_control,
         "positions": positions,
     }
-    _SEASON_CACHE[ck] = {"ts": time.time(), "data": result}
+    complete = len(laps) > 0 or len(stints) > 0
+    if complete:
+        _SEASON_CACHE[ck] = {"ts": time.time(), "data": result}
+    elif prev_d.get("laps") or prev_d.get("stints"):
+        return jsonify(prev_d)
+    # Transient failure with no prior snapshot — do not cache empty payload for 5 minutes
+    result["partial"] = True
     return jsonify(result)
 
 @app.route("/api/season/pit_stops", methods=["GET"])
