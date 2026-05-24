@@ -5,7 +5,8 @@ Provides: session data (OpenF1), car telemetry, AI analysis (Gemini/Claude),
 historical results tracking, and the session_telemetry.html frontend.
 """
 
-from flask import Flask, request, jsonify, send_from_directory, redirect
+from flask import Flask, request, jsonify, send_from_directory, redirect, session, make_response
+from functools import wraps
 import json
 import time
 import re
@@ -13,12 +14,54 @@ import os
 import csv
 import datetime
 import datetime as dt
+import hashlib
+import secrets
 from io import StringIO
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from threading import Lock
 
 app = Flask(__name__, static_folder="static", static_url_path="/static")
+app.secret_key = os.environ.get("SECRET_KEY", secrets.token_hex(32))
+app.permanent_session_lifetime = dt.timedelta(days=30)
+
+# ── Authentication ────────────────────────────────────────────────────────────
+_ADMIN_USER = "nightswatch"
+_ADMIN_PASS_HASH = os.environ.get("ADMIN_PASS_HASH", "")
+_ADMIN_PASS_RAW = os.environ.get("ADMIN_PASS", "")
+
+
+def _check_password(password):
+    if _ADMIN_PASS_HASH:
+        return hashlib.sha256(password.encode()).hexdigest() == _ADMIN_PASS_HASH
+    if _ADMIN_PASS_RAW:
+        return password == _ADMIN_PASS_RAW
+    return False
+
+
+def _auth_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if session.get("authenticated"):
+            return f(*args, **kwargs)
+        if request.path.startswith("/api/"):
+            return jsonify({"error": "Unauthorized"}), 401
+        return redirect("/login")
+    return decorated
+
+
+@app.before_request
+def _enforce_auth():
+    open_paths = ("/login", "/static/", "/health")
+    if any(request.path == p or request.path.startswith(p) for p in open_paths):
+        return None
+    if not _ADMIN_PASS_HASH and not _ADMIN_PASS_RAW:
+        return None
+    if session.get("authenticated"):
+        return None
+    if request.path.startswith("/api/"):
+        return jsonify({"error": "Unauthorized"}), 401
+    return redirect("/login")
 
 # ── Configuration ──────────────────────────────────────────────────────────────
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -2216,6 +2259,60 @@ def historical_years():
                 if parts and parts[-1].isdigit():
                     years.add(int(parts[-1]))
     return jsonify({"years": sorted(years, reverse=True)})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# LOGIN / LOGOUT
+# ══════════════════════════════════════════════════════════════════════════════
+_LOGIN_PAGE = """<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>F1 Telemetry — Login</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#0f1117;color:#e4e4e7;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.card{background:#1a1d27;border:1px solid #2a2d37;border-radius:16px;padding:40px;width:100%;max-width:380px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.logo{text-align:center;margin-bottom:24px;font-size:28px;font-weight:800;letter-spacing:-1px}
+.logo span{color:#e11d48}
+h2{text-align:center;font-size:15px;font-weight:400;color:#a1a1aa;margin-bottom:28px}
+label{display:block;font-size:12px;font-weight:600;color:#71717a;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+input{width:100%;padding:12px 14px;border:1px solid #2a2d37;border-radius:8px;background:#12141c;color:#e4e4e7;font-size:14px;outline:none;transition:border-color .2s}
+input:focus{border-color:#e11d48}
+.field{margin-bottom:18px}
+button{width:100%;padding:13px;border:none;border-radius:8px;background:#e11d48;color:#fff;font-size:14px;font-weight:600;cursor:pointer;transition:background .2s}
+button:hover{background:#be123c}
+.err{color:#f87171;font-size:12px;text-align:center;margin-top:14px;min-height:18px}
+</style></head><body>
+<div class="card">
+<div class="logo"><span>F1</span> Session Telemetry</div>
+<h2>Sign in to continue</h2>
+<form method="POST" action="/login">
+<div class="field"><label>Username</label><input type="text" name="username" autocomplete="username" required autofocus></div>
+<div class="field"><label>Password</label><input type="password" name="password" autocomplete="current-password" required></div>
+<button type="submit">Sign In</button>
+<div class="err">{{error}}</div>
+</form></div></body></html>"""
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "GET":
+        if session.get("authenticated"):
+            return redirect("/dashboard")
+        return make_response(_LOGIN_PAGE.replace("{{error}}", ""))
+    username = (request.form.get("username") or "").strip()
+    password = (request.form.get("password") or "").strip()
+    if username == _ADMIN_USER and _check_password(password):
+        session["authenticated"] = True
+        session["user"] = _ADMIN_USER
+        session.permanent = True
+        return redirect("/dashboard")
+    return make_response(_LOGIN_PAGE.replace("{{error}}", "Invalid username or password."))
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/login")
 
 
 # ══════════════════════════════════════════════════════════════════════════════
