@@ -2746,15 +2746,325 @@ def get_headlines():
 
     return jsonify(all_items[:limit])
 
+# ══════════════════════════════════════════════════════════════════════════════
+# ARTICLE SCRAPING AND CONVERSION
+# ══════════════════════════════════════════════════════════════════════════════
+_ARTICLE_PROMPT = """You are an expert F1 technical analyst and journalist. Analyze the following F1 article or video transcript and create a structured note.
+
+Today's date: {today}
+Source URL: {url}
+{extra}
+
+--- SOURCE TEXT ---
+{article_text}
+--- END SOURCE ---
+
+Output ONLY valid JSON (no markdown fences, no extra text) with this exact structure:
+{{
+  "id": "<slug-based-on-title-and-date>",
+  "title": "<descriptive analytical title>",
+  "date": "{today}",
+  "team": "<team name or 'Multi-Team' or 'F1'>",
+  "tags": ["<relevant technical tags>"],
+  "personnel": ["<relevant people mentioned>"],
+  "content": ["<analytical paragraphs>"],
+  "table": [["Header1","Header2","Header3","Header4"],["row1col1","row1col2","row1col3","row1col4"]],
+  "discussion_points": ["<analytical questions arising from the content>"],
+  "source_url": "{url}"
+}}
+
+Guidelines:
+- Write thorough, expert-level F1 technical analysis (5-8 paragraphs minimum)
+- Include Turkish translations of key F1 technical terms in parentheses on first use
+- Tags should include both English and Turkish equivalents
+- The table should summarize key data points
+- discussion_points should pose 3-5 insightful analytical questions
+- If multiple teams are discussed, set team to "Multi-Team"
+- Output ONLY the JSON object, nothing else"""
+
+
+def _scrape_article_content(url):
+    """Fetch and extract article text from a URL."""
+    from bs4 import BeautifulSoup
+    from urllib.parse import urlparse
+    import requests as req
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    }
+
+    resp = req.get(url, headers=headers, timeout=30)
+    resp.raise_for_status()
+    soup = BeautifulSoup(resp.text, "html.parser")
+
+    for tag in soup.find_all(["script", "style", "nav", "footer", "aside", "iframe", "noscript"]):
+        tag.decompose()
+
+    title = ""
+    meta_info = {}
+
+    og_title = soup.find("meta", property="og:title")
+    if og_title and og_title.get("content"):
+        title = og_title["content"]
+    elif soup.find("h1"):
+        title = soup.find("h1").get_text(strip=True)
+    elif soup.title:
+        title = soup.title.get_text(strip=True)
+
+    author_meta = soup.find("meta", attrs={"name": "author"})
+    if author_meta and author_meta.get("content"):
+        meta_info["author"] = author_meta["content"]
+
+    for attr in ["article:published_time", "datePublished", "og:article:published_time"]:
+        date_meta = soup.find("meta", property=attr) or soup.find("meta", attrs={"name": attr})
+        if date_meta and date_meta.get("content"):
+            meta_info["published"] = date_meta["content"][:10]
+            break
+
+    article_text = ""
+    host = (urlparse(url).netloc or "").lower().replace("www.", "")
+
+    if "soymotor.com" in host:
+        sm_article = soup.find("article")
+        if sm_article:
+            for noise in sm_article.select(".related, .mas-leidas, .sidebar, aside"):
+                noise.decompose()
+            sm_paras = sm_article.find_all(["p", "h2", "h3", "blockquote"])
+            article_text = "\n\n".join(p.get_text(strip=True) for p in sm_paras if len(p.get_text(strip=True)) > 25)
+
+    if not article_text or len(article_text) < 100:
+        body = soup.find("article") or soup.select_one("[role='main'], main, .content, #content") or soup.body
+        if body:
+            paragraphs = body.find_all(["p", "h2", "h3", "blockquote", "li"])
+            article_text = "\n\n".join(p.get_text(strip=True) for p in paragraphs if p.get_text(strip=True))
+
+    if not article_text:
+        article_text = soup.get_text(separator="\n", strip=True)
+
+    if len(article_text) > 15000:
+        article_text = article_text[:15000] + "\n\n[...article truncated...]"
+
+    return title, article_text, meta_info
+
+
+def _call_gemini_article(api_key, url, article_text, extra_context=""):
+    """Call Gemini API with article text and return parsed note dict."""
+    import urllib.request as urlreq
+    import urllib.error
+
+    today = dt.datetime.now().strftime("%Y-%m-%d")
+    prompt = _ARTICLE_PROMPT.format(today=today, url=url, article_text=article_text,
+                                     extra=("Additional context: " + extra_context) if extra_context else "")
+
+    payload = {
+        "contents": [{"parts": [{"text": prompt}]}],
+        "generationConfig": {"temperature": 0.7, "maxOutputTokens": 8192, "responseMimeType": "application/json"}
+    }
+    payload_bytes = json.dumps(payload).encode("utf-8")
+
+    models = ["gemini-2.5-flash", "gemini-2.0-flash"]
+    last_err = None
+
+    for model in models:
+        api_url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
+        for attempt in range(3):
+            try:
+                req = urlreq.Request(api_url, data=payload_bytes, headers={"Content-Type": "application/json"})
+                with urlreq.urlopen(req, timeout=90) as resp:
+                    result = json.loads(resp.read().decode("utf-8"))
+                content_text = result["candidates"][0]["content"]["parts"][0]["text"].strip()
+                if content_text.startswith("```"):
+                    content_text = re.sub(r'^```(?:json)?\s*', '', content_text)
+                    content_text = re.sub(r'\s*```$', '', content_text)
+                note = json.loads(content_text)
+                if not note.get("date"):
+                    note["date"] = today
+                if not note.get("id"):
+                    slug = re.sub(r'[^a-z0-9]+', '-', note.get("title", "article-note").lower()).strip('-')[:60]
+                    note["id"] = f"{slug}-{note['date']}"
+                note["source_url"] = url
+                return note
+            except urllib.error.HTTPError as he:
+                last_err = he
+                if he.code in (429, 500, 503):
+                    time.sleep((attempt + 1) * 3)
+                    continue
+                elif he.code == 404:
+                    break
+                else:
+                    raise
+            except json.JSONDecodeError:
+                raise
+            except Exception as ex:
+                last_err = ex
+                if attempt < 2:
+                    time.sleep(2)
+                    continue
+                break
+        if note:
+            break
+    raise last_err or Exception("All Gemini models failed")
+
+
+def _call_claude_article(api_key, url, article_text, extra_context=""):
+    """Call Claude API with article text and return parsed note dict."""
+    today = dt.datetime.now().strftime("%Y-%m-%d")
+    prompt = _ARTICLE_PROMPT.format(today=today, url=url, article_text=article_text,
+                                     extra=("Additional context: " + extra_context) if extra_context else "")
+    content_text = _call_claude_for_prompt(api_key, prompt, max_tokens=8192, temperature=0.7)
+    if content_text.startswith("```"):
+        content_text = re.sub(r'^```(?:json)?\s*', '', content_text)
+        content_text = re.sub(r'\s*```$', '', content_text)
+    note = json.loads(content_text)
+    if not note.get("date"):
+        note["date"] = today
+    if not note.get("id"):
+        slug = re.sub(r'[^a-z0-9]+', '-', note.get("title", "article-note").lower()).strip('-')[:60]
+        note["id"] = f"{slug}-{note['date']}"
+    note["source_url"] = url
+    return note
+
+
 @app.route("/api/article_body", methods=["POST"])
 def get_article_body():
-    """Stub — article scraping not available on this deployment."""
-    return jsonify({"error": "Article scraping not available on this server."}), 501
+    """Fetch full article text for article-to-note conversion."""
+    from urllib.parse import urlparse
+    data = request.get_json(force=True) or {}
+    url = (data.get("url") or "").strip()
+    if not url:
+        return jsonify({"error": "URL is required"}), 400
+    try:
+        title, article_text, meta = _scrape_article_content(url)
+        if not article_text or len(article_text) < 100:
+            return jsonify({"error": "Could not extract article content. The site may be blocking access."}), 400
+        return jsonify({"ok": True, "title": title, "text": article_text, "chars": len(article_text), **meta})
+    except Exception as e:
+        return jsonify({"error": f"Failed to fetch article: {str(e)}"}), 500
+
 
 @app.route("/api/scrape_article", methods=["POST"])
 def scrape_article():
-    """Stub — article scraping not available on this deployment."""
-    return jsonify({"error": "Article scraping not available on this server."}), 501
+    """Scrape article metadata from motorsport news URLs."""
+    from bs4 import BeautifulSoup
+    from urllib.parse import urlparse
+    import requests as req
+
+    data = request.get_json()
+    url = (data.get("url") or "").strip()
+    if not url:
+        return jsonify({"error": "URL is required"}), 400
+
+    try:
+        headers = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"}
+        response = req.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+
+        soup = BeautifulSoup(response.content, "html.parser")
+        domain = urlparse(url).netloc
+
+        title = description = author = date = image = None
+
+        og_title = soup.find("meta", property="og:title")
+        if og_title:
+            title = og_title.get("content")
+        if not title:
+            title_tag = soup.find("title")
+            if title_tag:
+                title = title_tag.get_text().strip()
+        if not title:
+            h1 = soup.find("h1")
+            if h1:
+                title = h1.get_text().strip()
+
+        og_desc = soup.find("meta", property="og:description")
+        if og_desc:
+            description = og_desc.get("content")
+        if not description:
+            meta_desc = soup.find("meta", attrs={"name": "description"})
+            if meta_desc:
+                description = meta_desc.get("content")
+
+        og_image = soup.find("meta", property="og:image")
+        if og_image:
+            image = og_image.get("content")
+
+        author_meta = soup.find("meta", attrs={"name": "author"})
+        if author_meta:
+            author = author_meta.get("content")
+
+        date_meta = soup.find("meta", property="article:published_time")
+        if date_meta:
+            date = date_meta.get("content")
+        if not date:
+            time_tag = soup.find("time")
+            if time_tag:
+                date = time_tag.get("datetime") or time_tag.get_text().strip()
+
+        return jsonify({
+            "success": True, "url": url, "domain": domain,
+            "title": title or "No title found", "description": description or "",
+            "author": author or "", "date": date or "", "image": image or "",
+        })
+    except Exception as e:
+        return jsonify({"error": f"Failed to fetch URL: {str(e)}"}), 400
+
+
+@app.route("/api/notes/from_article", methods=["POST"])
+def notes_from_article():
+    """Scrape article and convert to structured note via AI."""
+    try:
+        data = request.get_json(force=True)
+        provider = (data.get("provider") or "gemini").strip().lower()
+        url = (data.get("url") or "").strip()
+        extra_context = (data.get("context") or "").strip()
+
+        if not url:
+            return jsonify({"error": "No URL provided"}), 400
+
+        expected_title = (data.get("expected_title") or data.get("headline_title") or "").strip()
+        pre_text = (data.get("article_text") or "").strip()
+        pre_title = (data.get("scrape_title") or "").strip()
+
+        if pre_text and len(pre_text) >= 100:
+            title = pre_title or expected_title
+            article_text = pre_text
+            meta = {}
+        else:
+            title, article_text, meta = _scrape_article_content(url)
+        if not article_text or len(article_text) < 100:
+            return jsonify({"error": "Could not extract article content from URL. The site may be blocking access."}), 400
+
+        meta_parts = []
+        if expected_title:
+            meta_parts.append(f"IMPORTANT — User selected this headline; your note MUST be about this story only: {expected_title}")
+        if title:
+            meta_parts.append(f"Article title: {title}")
+        if meta.get("author"):
+            meta_parts.append(f"Author: {meta['author']}")
+        if meta.get("published"):
+            meta_parts.append(f"Published: {meta['published']}")
+        if extra_context:
+            meta_parts.append(extra_context)
+        full_context = " | ".join(meta_parts)
+
+        if provider == "claude":
+            api_key = _get_claude_key()
+            if not api_key:
+                return jsonify({"error": "NO_KEY", "message": "Claude API key not configured."}), 400
+            note = _call_claude_article(api_key, url, article_text, full_context)
+        else:
+            api_key = _get_gemini_key()
+            if not api_key:
+                return jsonify({"error": "NO_KEY", "message": "Gemini API key not configured."}), 400
+            note = _call_gemini_article(api_key, url, article_text, full_context)
+
+        return jsonify({"ok": True, "note": note, "provider": provider, "meta": {"title": title, "chars": len(article_text), **meta}})
+
+    except json.JSONDecodeError as e:
+        return jsonify({"error": f"AI returned invalid JSON: {str(e)}"}), 500
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 # ══════════════════════════════════════════════════════════════════════════════
