@@ -2265,6 +2265,62 @@ def save_api_keys():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/settings/gemini_key", methods=["GET"])
+def get_gemini_key_status():
+    key = _get_gemini_key()
+    if key:
+        masked = key[:6] + "..." + key[-4:] if len(key) > 10 else "***"
+        return jsonify({"has_key": True, "masked": masked})
+    return jsonify({"has_key": False, "masked": ""})
+
+@app.route("/api/settings/gemini_key", methods=["POST"])
+def save_gemini_key():
+    try:
+        data = request.get_json(force=True)
+        key = (data.get("key") or "").strip()
+        if not key:
+            return jsonify({"error": "No key provided"}), 400
+        cfg = _load_app_config()
+        cfg["gemini_api_key"] = key
+        _save_app_config(cfg)
+        masked = key[:6] + "..." + key[-4:] if len(key) > 10 else "***"
+        return jsonify({"ok": True, "masked": masked})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/settings/claude_key", methods=["GET"])
+def get_claude_key_status():
+    key = _get_claude_key()
+    if key:
+        masked = key[:7] + "..." + key[-4:] if len(key) > 12 else "***"
+        return jsonify({"has_key": True, "masked": masked})
+    return jsonify({"has_key": False, "masked": ""})
+
+@app.route("/api/settings/claude_key", methods=["POST"])
+def save_claude_key():
+    try:
+        data = request.get_json(force=True)
+        key = (data.get("key") or "").strip()
+        if not key:
+            return jsonify({"error": "No key provided"}), 400
+        cfg = _load_app_config()
+        cfg["claude_api_key"] = key
+        _save_app_config(cfg)
+        masked = key[:7] + "..." + key[-4:] if len(key) > 12 else "***"
+        return jsonify({"ok": True, "masked": masked})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+@app.route("/api/settings/ai_status", methods=["GET"])
+def get_ai_status():
+    gemini = _get_gemini_key()
+    claude = _get_claude_key()
+    return jsonify({
+        "gemini": {"has_key": bool(gemini), "masked": (gemini[:6] + "..." + gemini[-4:]) if len(gemini) > 10 else ""},
+        "claude": {"has_key": bool(claude), "masked": (claude[:7] + "..." + claude[-4:]) if len(claude) > 12 else ""},
+    })
+
+
 # ══════════════════════════════════════════════════════════════════════════════
 # F1 NOTES — API routes
 # ══════════════════════════════════════════════════════════════════════════════
@@ -2558,6 +2614,22 @@ def import_notes():
         return jsonify({"ok": True, "imported": added, "skipped_duplicates": len(valid) - added, "total": len(elist)})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/headlines", methods=["GET"])
+def get_headlines():
+    """Stub — headline scraping not available on this deployment."""
+    return jsonify([])
+
+@app.route("/api/article_body", methods=["POST"])
+def get_article_body():
+    """Stub — article scraping not available on this deployment."""
+    return jsonify({"error": "Article scraping not available on this server."}), 501
+
+@app.route("/api/scrape_article", methods=["POST"])
+def scrape_article():
+    """Stub — article scraping not available on this deployment."""
+    return jsonify({"error": "Article scraping not available on this server."}), 501
 
 
 # ══════════════════════════════════════════════════════════════════════════════
