@@ -1500,12 +1500,15 @@ async function saveSessionToHistory(){
   const payload=_computeSessionHistoryResults();
   if(!payload||!payload.results.length)return;
   try{
-    await fetch("/api/historical/save_session",{
+    const resp=await fetch("/api/historical/save_session",{
       method:"POST",
       headers:{"Content-Type":"application/json"},
       body:JSON.stringify(payload)
     });
-    console.log("[Historical] Saved",payload.results.length,"results for",payload.session_type);
+    const body=await resp.json().catch(()=>({}));
+    if(!resp.ok)throw new Error(body.error||resp.statusText);
+    console.log("[Historical] Saved",body.saved||payload.results.length,"results for",payload.session_type,
+      body.total!=null?`(${body.total} total in ${body.file||"csv"})`:"");
     _histData=null;
   }catch(e){console.warn("[Historical] Save failed:",e);}
 }

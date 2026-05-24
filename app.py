@@ -24,8 +24,13 @@ app = Flask(__name__, static_folder="static", static_url_path="/static")
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 DOCS_DIR = os.path.join(STATIC_DIR, "docs")
-DATA_DIR = os.path.join(BASE_DIR, "data")
-_HIST_DIR = os.path.join(STATIC_DIR, "data", "historical")
+_PERSIST_ROOT = os.environ.get("PERSISTENT_DATA_DIR", "").strip()
+if _PERSIST_ROOT:
+    DATA_DIR = _PERSIST_ROOT
+    _HIST_DIR = os.path.join(_PERSIST_ROOT, "historical")
+else:
+    DATA_DIR = os.path.join(BASE_DIR, "data")
+    _HIST_DIR = os.path.join(STATIC_DIR, "data", "historical")
 NOTES_PATH = os.path.join(DATA_DIR, "notes.json")
 
 os.makedirs(DOCS_DIR, exist_ok=True)
@@ -1861,6 +1866,19 @@ _PRACTICE_CSV_COLS = ["year","round","meeting_key","meeting_name","session_key",
     "driver_number","driver_acronym","team","best_time","laps_completed",
     "position","gap_to_leader"]
 
+_HIST_LOCK = Lock()
+
+
+def _write_csv_rows(csv_path, cols, rows):
+    """Atomic CSV write so concurrent workers/machines don't corrupt files."""
+    os.makedirs(os.path.dirname(csv_path), exist_ok=True)
+    tmp_path = csv_path + ".tmp"
+    with open(tmp_path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=cols, extrasaction="ignore")
+        writer.writeheader()
+        writer.writerows(rows)
+    os.replace(tmp_path, csv_path)
+
 
 @app.route("/api/historical/save_session", methods=["POST"])
 def historical_save_session():
@@ -1892,35 +1910,34 @@ def historical_save_session():
 
     csv_path = _hist_csv_path(year, csv_type)
 
-    existing_rows = []
-    if os.path.exists(csv_path):
-        with open(csv_path, "r", newline="") as f:
-            reader = csv.DictReader(f)
-            existing_rows = [r for r in reader if str(r.get("session_key", "")) != str(session_key)]
+    with _HIST_LOCK:
+        existing_rows = []
+        if os.path.exists(csv_path):
+            with open(csv_path, "r", newline="") as f:
+                reader = csv.DictReader(f)
+                existing_rows = [r for r in reader if str(r.get("session_key", "")) != str(session_key)]
 
-    new_rows = []
-    for r in results:
-        row = {c: "" for c in cols}
-        row["year"] = year
-        row["round"] = round_num
-        row["meeting_key"] = meeting_key
-        row["meeting_name"] = meeting_name
-        row["session_key"] = session_key
-        row["session_type"] = stype
-        if csv_type == "practice":
-            row["session_name"] = session_name
-        for k, v in r.items():
-            if k in cols:
-                row[k] = v
-        new_rows.append(row)
+        new_rows = []
+        for r in results:
+            row = {c: "" for c in cols}
+            row["year"] = year
+            row["round"] = round_num
+            row["meeting_key"] = meeting_key
+            row["meeting_name"] = meeting_name
+            row["session_key"] = session_key
+            row["session_type"] = stype
+            if csv_type == "practice":
+                row["session_name"] = session_name
+            for k, v in r.items():
+                if k in cols:
+                    row[k] = v
+            new_rows.append(row)
 
-    all_rows = existing_rows + new_rows
-    with open(csv_path, "w", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=cols, extrasaction="ignore")
-        writer.writeheader()
-        writer.writerows(all_rows)
+        all_rows = existing_rows + new_rows
+        _write_csv_rows(csv_path, cols, all_rows)
 
-    return jsonify({"status": "ok", "saved": len(new_rows), "file": os.path.basename(csv_path)})
+    return jsonify({"status": "ok", "saved": len(new_rows), "file": os.path.basename(csv_path),
+                    "total": len(all_rows), "path": csv_path})
 
 
 @app.route("/api/historical/results")
